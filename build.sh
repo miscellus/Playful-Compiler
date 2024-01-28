@@ -2,6 +2,37 @@
 
 set -e
 
-cc -std=c99 -Wall -Wextra -pedantic -O0 -ggdb calculator.c tokenizer.c parser.c -o calculator -lm
+[[ ! -d build ]] && mkdir build
 
-./calculator -print-infix -print-rpn -print-s '(1 + 2*(3 - 4^0))/7 - 5^2'
+
+COMPILATION_UNITS="
+../src/calculator.c
+../src/tokenizer.c
+../src/parser.c
+"
+
+CFLAGS="
+-std=c99
+-Wall
+-Wextra
+-pedantic
+-O0
+-ggdb
+-I../src
+"
+
+LDFLAGS="
+-lm
+"
+
+pushd build
+
+set -x
+
+cc $CFLAGS $COMPILATION_UNITS -o calculator $LDFLAGS
+
+popd
+
+# ./calculator -print-infix -print-rpn -print-s '(1 + 2*(3 - 4^0))/7 - 5^2'
+
+bash test.sh
