@@ -33,6 +33,6 @@ cc $CFLAGS $COMPILATION_UNITS -o calculator $LDFLAGS
 
 popd
 
-# ./calculator -print-infix -print-rpn -print-s '(1 + 2*(3 - 4^0))/7 - 5^2'
-
 bash test.sh
+
+build/calculator -print-infix -print-rpn -print-s '(1 + 2*(3 - 4^0))/7 - 5^2'

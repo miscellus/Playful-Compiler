@@ -85,6 +85,13 @@ double EvalExpr(Expr *expr)
 	return 1337.0;
 }
 
+static void ExitPrintUsage(const char *program, int exitCode)
+{
+	fprintf(stderr, "Missing argument.\n");
+	fprintf(stderr, "USAGE: %s <expressions>\n", program);
+	exit(exitCode);
+}
+
 
 int main(int argc, char const *argv[])
 {
@@ -92,9 +99,7 @@ int main(int argc, char const *argv[])
 
 	if (argc < 1)
 	{
-		fprintf(stderr, "Missing argument.\n");
-		fprintf(stderr, "USAGE: %s <expressions>\n", program);
-		return 1;
+		ExitPrintUsage(program, 1);
 	}
 
 	enum OutputOpt
@@ -129,9 +134,7 @@ int main(int argc, char const *argv[])
 		}
 		else if (argc < 1)
 		{
-			fprintf(stderr, "Missing argument.\n");
-			fprintf(stderr, "USAGE: %s <expressions>\n", program);
-			return 1;
+			ExitPrintUsage(program, 1);
 		}
 		else
 		{
@@ -149,10 +152,13 @@ int main(int argc, char const *argv[])
 
 	char *at = exprBuf;
 	for (int i = 0; i < argc; ++i) {
+		if (i > 0)
+		{
+			*at++ = ' ';
+		}
 		long len = strlen(argv[i]);
 		memcpy(at, argv[i], len);
 		at += len;
-		*at++ = ' ';
 	}
 	*at = '\0';
 
@@ -181,8 +187,15 @@ int main(int argc, char const *argv[])
 		printf("\n");
 	}
 
-	double result = EvalExpr(parsedExpression);
-	printf("%g\n", result);
+	if (parsedExpression)
+	{
+		double result = EvalExpr(parsedExpression);
+		printf("%g\n", result);
+	}
+	else
+	{
+		printf("()\n");
+	}
 
 	return 0;
 }

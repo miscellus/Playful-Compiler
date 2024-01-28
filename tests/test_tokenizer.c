@@ -45,7 +45,7 @@ void TEST_NextToken_NumberInInput_MatchingNumberToken(void)
 
 	// Assert
 	TEST_ASSERT_EQUAL_INT32(TOK_NUMBER, token.type);
-	TEST_ASSERT(fabs(42. - token.number) < 1e-7);
+	TEST_ASSERT_EQUAL_DOUBLE(42, token.number);
 }
 
 

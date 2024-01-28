@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "parser.h"
+#include "tokenizer.h"
 
 static void OperatorPrecedence(int op, int *lPrec, int *rPrec)
 {
@@ -41,9 +42,12 @@ Expr *ParseExpression(TokenStream *ts, int minPrec, Token stopToken)
 	}
 	else
 	{
-		fprintf(stderr, "Unexpected token: %d '%c'\n", tok.type, tok.type);
-		fprintf(stderr, "At: '%s'\n", ts->at);
-		assert(!"TODO: Error reporting (unknown) lhs token");
+		if (tok.type != TOK_END_OF_STREAM)
+		{
+			fprintf(stderr, "Unexpected token: %d '%c'\n", tok.type, tok.type);
+			fprintf(stderr, "At: '%s'\n", ts->at);
+			assert(!"TODO: Error reporting (unknown) lhs token");
+		}
 		return NULL;
 	}
 

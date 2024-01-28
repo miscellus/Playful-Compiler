@@ -13,6 +13,7 @@ CFLAGS="
 	-pedantic
 	-O0
 	-ggdb
+	-DUNITY_INCLUDE_DOUBLE
 	$TESTS/unity.c
 "
 
