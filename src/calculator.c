@@ -10,7 +10,7 @@
 
 void PrintExprInfix(Expr *expr)
 {
-	switch (expr->exprType) {
+	switch (expr->type) {
 	case EXPR_NUMBER:
 		printf("%g", expr->number.v);
 		break;
@@ -22,12 +22,16 @@ void PrintExprInfix(Expr *expr)
 		PrintExprInfix(expr->binop.v.rhs);
 		printf(")");
 		break;
+
+	case EXPR_PARSE_ERROR:
+		assert(!"TODO: print parse error");
+		break;
 	}
 }
 
 void PrintExprRPN(Expr *expr)
 {
-	switch (expr->exprType) {
+	switch (expr->type) {
 	case EXPR_NUMBER:
 		printf("%g", expr->number.v);
 		break;
@@ -38,12 +42,16 @@ void PrintExprRPN(Expr *expr)
 		PrintExprRPN(expr->binop.v.rhs);
 		printf(" %c", expr->binop.v.op);
 		break;
+
+	case EXPR_PARSE_ERROR:
+		assert(!"TODO: print parse error");
+		break;
 	}
 }
 
 void PrintExprS(Expr *expr)
 {
-	switch (expr->exprType) {
+	switch (expr->type) {
 	case EXPR_NUMBER:
 		printf("%g", expr->number.v);
 		break;
@@ -55,12 +63,16 @@ void PrintExprS(Expr *expr)
 		PrintExprS(expr->binop.v.rhs);
 		printf(")");
 		break;
+
+	case EXPR_PARSE_ERROR:
+		assert(!"TODO: print parse error");
+		break;
 	}
 }
 
 double EvalExpr(Expr *expr)
 {
-	switch (expr->exprType)
+	switch (expr->type)
 	{
 		case EXPR_NUMBER:
 			return expr->number.v;
@@ -81,6 +93,10 @@ double EvalExpr(Expr *expr)
 					return 42.0;
 			}
 		} break;
+
+		case EXPR_PARSE_ERROR:
+			assert(!"TODO: eval parse error");
+			break;
 	}
 	return 1337.0;
 }

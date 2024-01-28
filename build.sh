@@ -4,11 +4,14 @@ set -e
 
 [[ ! -d build ]] && mkdir build
 
+BUILD=$(realpath build)
+SRC=$(realpath src)
+
 
 COMPILATION_UNITS="
-../src/calculator.c
-../src/tokenizer.c
-../src/parser.c
+$SRC/calculator.c
+$SRC/tokenizer.c
+$SRC/parser.c
 "
 
 CFLAGS="
@@ -25,14 +28,10 @@ LDFLAGS="
 -lm
 "
 
-pushd build
-
 set -x
 
-cc $CFLAGS $COMPILATION_UNITS -o calculator $LDFLAGS
-
-popd
+cc $CFLAGS $COMPILATION_UNITS -o $BUILD/calculator $LDFLAGS
 
 bash test.sh
 
-build/calculator -print-infix -print-rpn -print-s '(1 + 2*(3 - 4^0))/7 - 5^2'
+$BUILD/calculator -print-infix -print-rpn -print-s '(1 + 2*(3 - 4^0))/7 - 5^2'

@@ -28,7 +28,7 @@ void TEST_ParseExpression_NumberWithSpaces_SingleNumberExpression(void)
 
 	// Assert
 	TEST_ASSERT_NOT_NULL(expr);
-	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, expr->exprType);
+	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, expr->type);
 }
 
 void TEST_ParseExpression_SingleAdditionBinop_1Lhs2Rhs(void)
@@ -38,15 +38,15 @@ void TEST_ParseExpression_SingleAdditionBinop_1Lhs2Rhs(void)
 
 	// Assert
 	TEST_ASSERT_NOT_NULL(expr);
-	TEST_ASSERT_EQUAL_INT32(EXPR_BINOP, expr->exprType);
+	TEST_ASSERT_EQUAL_INT32(EXPR_BINOP, expr->type);
 	Expr *lhs = expr->binop.v.lhs;
 	Expr *rhs = expr->binop.v.rhs;
 	TEST_ASSERT_EQUAL_INT32('+', expr->binop.v.op);
 
 	TEST_ASSERT_NOT_NULL(lhs);
 	TEST_ASSERT_NOT_NULL(rhs);
-	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, lhs->exprType);
-	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, rhs->exprType);
+	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, lhs->type);
+	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, rhs->type);
 	TEST_ASSERT_EQUAL_DOUBLE(1.0, lhs->number.v);
 	TEST_ASSERT_EQUAL_DOUBLE(2.0, rhs->number.v);
 }

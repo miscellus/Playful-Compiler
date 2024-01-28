@@ -23,28 +23,28 @@ static void OperatorPrecedence(int op, int *lPrec, int *rPrec)
 	*rPrec = 2*prec + (1 & (1 - rightAssoc));
 }
 
-Expr *ParseExpression(TokenStream *ts, int minPrec, Token stopToken)
+Expr *ParseExpression(TokenStream *ts, int minimumPrecedence, Token stopToken)
 {
-	Token tok = NextToken(ts);
+	Token token = NextToken(ts);
 
 	Expr *lhs;
 
-	if (tok.type == TOK_NUMBER)
+	if (token.type == TOK_NUMBER)
 	{
 		lhs = malloc(sizeof(*lhs));
-		lhs->exprType = EXPR_NUMBER;
-		lhs->number.v = tok.number;
+		lhs->type = EXPR_NUMBER;
+		lhs->number.v = token.number;
 	}
-	else if (tok.type == '(')
+	else if (token.type == '(')
 	{
 		lhs = ParseExpression(ts, 0, (Token){.type = ')'});
 		NextToken(ts);
 	}
 	else
 	{
-		if (tok.type != TOK_END_OF_STREAM)
+		if (token.type != TOK_END_OF_STREAM)
 		{
-			fprintf(stderr, "Unexpected token: %d '%c'\n", tok.type, tok.type);
+			fprintf(stderr, "Unexpected token: %d '%c'\n", token.type, token.type);
 			fprintf(stderr, "At: '%s'\n", ts->at);
 			assert(!"TODO: Error reporting (unknown) lhs token");
 		}
@@ -76,7 +76,7 @@ Expr *ParseExpression(TokenStream *ts, int minPrec, Token stopToken)
 		int lPrec, rPrec;
 		OperatorPrecedence(tokOp.type, &lPrec, &rPrec);
 
-		if (lPrec < minPrec)
+		if (lPrec < minimumPrecedence)
 		{
 			break;
 		}
@@ -85,7 +85,7 @@ Expr *ParseExpression(TokenStream *ts, int minPrec, Token stopToken)
 		Expr *rhs = ParseExpression(ts, rPrec, stopToken);
 
 		Expr *newLhs = malloc(sizeof(*newLhs));
-		newLhs->exprType = EXPR_BINOP;
+		newLhs->type = EXPR_BINOP;
 		newLhs->binop.v = (BinNode)
 		{
 			.op = tokOp.type,
