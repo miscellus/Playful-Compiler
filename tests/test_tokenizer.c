@@ -45,7 +45,7 @@ void TEST_NextToken_NumberInInput_MatchingNumberToken(void)
 
 	// Assert
 	TEST_ASSERT_EQUAL_INT32(TOK_NUMBER, token.type);
-	TEST_ASSERT_EQUAL_DOUBLE(42, token.number);
+	TEST_ASSERT_EQUAL_DOUBLE(24, token.number);
 }
 
 
