@@ -3,10 +3,12 @@ name: Run Tests
 on:
   push:
     branches:
-      - main
+      - '**'        # matches every branch
+      - '!main'   # excludes master
   pull_request:
     branches:
-      - main
+      - '**'
+      - '!master'
   workflow_dispatch:
 
 jobs:
