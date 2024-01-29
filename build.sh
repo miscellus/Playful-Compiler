@@ -32,6 +32,4 @@ set -x
 
 cc $CFLAGS $COMPILATION_UNITS -o $BUILD/calculator $LDFLAGS
 
-bash test.sh
-
 $BUILD/calculator -print-infix -print-rpn -print-s '(1 + 2*(3 - 4^0))/7 - 5^2'

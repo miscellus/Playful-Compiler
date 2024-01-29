@@ -8,3 +8,8 @@ This is just a toy compiler that I am tinkering with. Feel free to play along. (
 $ bash build.sh
 $ ./build/calculator '1 + 2 * 3 + 4 ^ (2 - 1 * 2)'
 ```
+
+## Run Tests
+```
+$ bash test.sh
+```
