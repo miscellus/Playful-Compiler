@@ -74,7 +74,7 @@ Expr *ParseExpression(TokenStream *ts, int minimumPrecedence, Token stopToken)
 			return ErrorExpr(
 				"Unexpected token: %d '%c'\n"
 				"At: %s\n",
-				0, 0, // TODO(jkk): line and column
+				token.line, token.column,
 				token.type, token.type,
 				ts->at);
 		}
@@ -102,7 +102,7 @@ Expr *ParseExpression(TokenStream *ts, int minimumPrecedence, Token stopToken)
 			return ErrorExpr(
 				"Unexpected token: %d '%c'\n"
 				"At: %s\n",
-				0, 0, // TODO(jkk): line and column
+				tokOp.line, tokOp.column,
 				tokOp.type, tokOp.type,
 				ts->at);
 		}
