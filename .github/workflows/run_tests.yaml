@@ -3,7 +3,7 @@ name: Run Tests
 on:
   push:
     branches:
-      - '**'        # matches every branch
+      - '**'      # matches every branch
       - '!main'   # excludes master
   pull_request:
     branches:
@@ -15,7 +15,7 @@ jobs:
   run_tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Build
         run: bash build.sh
       - name: Test
