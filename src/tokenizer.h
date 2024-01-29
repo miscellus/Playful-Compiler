@@ -10,6 +10,8 @@ typedef enum TokenType_t
 typedef struct Token_t
 {
 	int type;
+	int line;
+	int column;
 	double number;
 } Token;
 
@@ -17,6 +19,8 @@ typedef struct TokenStream_t
 {
 	const char *at;
 	const char *const end;
+	const char *lineStart;
+	int lineCount;
 } TokenStream;
 
 TokenStream TokenStreamFromCStr(const char *str);

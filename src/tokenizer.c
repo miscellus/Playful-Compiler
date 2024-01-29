@@ -21,34 +21,51 @@ static char PeekChar(TokenStream *ts)
 	return 0;
 }
 
-static char NextChar(TokenStream *ts)
+static char Advance(TokenStream *ts)
 {
-	char c = PeekChar(ts);
-	if (c) ++ts->at;
+	char c = *ts->at++;
+
+	if (c == '\n')
+	{
+		ts->lineStart = ts->at;
+		++ts->lineCount;
+	}
+
 	return c;
 }
 
 static void EatSpace(TokenStream *ts)
 {
-	while (ts->at < ts->end && isspace(*ts->at)) ++ts->at;
+	while (ts->at < ts->end && isspace(*ts->at)) Advance(ts);
+}
+
+static int GetColumn(TokenStream *ts)
+{
+	int result = (int)(ts->at - ts->lineStart);
+	assert(result >= 0);
+	return result;
 }
 
 TokenStream TokenStreamFromCStr(const char *str)
 {
-	return (TokenStream){str, str + strlen(str)};
+	return (TokenStream){str, str + strlen(str), str, 0};
 }
 
 Token NextToken(TokenStream *ts)
 {
 	EatSpace(ts);
+
+	Token result = {0};
+	result.line = ts->lineCount;
+	result.column = GetColumn(ts);
+
 	if (RemainingChars(ts) <= 0)
 	{
-		return (Token){TOK_END_OF_STREAM};
+		result.type = TOK_END_OF_STREAM;
+		return result;
 	}
 
 	const char *tokStart = ts->at;
-
-	Token result = {0};
 
 	if (isdigit(PeekChar(ts)))
 	{
@@ -56,7 +73,7 @@ Token NextToken(TokenStream *ts)
 		char c;
 		while((c = PeekChar(ts), isdigit(c) || c == '.'))
 		{
-			++ts->at;
+			Advance(ts);
 		}
 
 		unsigned long copyLength = (unsigned long)(ts->at - tokStart) & 63;
@@ -67,7 +84,7 @@ Token NextToken(TokenStream *ts)
 	}
 	else
 	{
-		result.type = NextChar(ts);
+		result.type = Advance(ts);
 	}
 
 	return result;

@@ -67,6 +67,21 @@ void TEST_NextToken_CharactersBetween1And255_TokenTypeEqualsCharacterOrdinalValu
 	TEST_ASSERT_EQUAL_INT32('\xff', tokHexFF.type);
 }
 
+void TEST_NextToken_SeveralLinesAndColumns_ExpectedLineAndColumn(void)
+{
+	// Arrange
+	TokenStream ts = TokenStreamFromCStr("\n\n   .");
+	int expectedLine = 2;
+	int expectedColumn = 3;
+
+	// Act
+	Token token = NextToken(&ts);
+
+	// Assert
+	TEST_ASSERT_EQUAL_INT32(expectedLine, token.line);
+	TEST_ASSERT_EQUAL_INT32(expectedColumn, token.column);
+}
+
 int main(void)
 {
 	UNITY_BEGIN();
@@ -75,5 +90,6 @@ int main(void)
 	RUN_TEST(TEST_NextToken_EmptyInput_EmptyOutput);
 	RUN_TEST(TEST_NextToken_NumberInInput_MatchingNumberToken);
 	RUN_TEST(TEST_NextToken_CharactersBetween1And255_TokenTypeEqualsCharacterOrdinalValue);
+	RUN_TEST(TEST_NextToken_SeveralLinesAndColumns_ExpectedLineAndColumn);
 	return UNITY_END();
 }
