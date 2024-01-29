@@ -1,6 +1,9 @@
 #include <assert.h>
-#include <stdlib.h>
+#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 
 #include "parser.h"
 #include "tokenizer.h"
@@ -21,6 +24,30 @@ static void OperatorPrecedence(int op, int *lPrec, int *rPrec)
 
 	*lPrec = 2*prec + (1 & rightAssoc);
 	*rPrec = 2*prec + (1 & (1 - rightAssoc));
+}
+
+static Expr *ErrorExpr(const char *restrict messageFormat, int line, int column, ...)
+{
+	static char messageBuffer[512]; // @not-thread-safe
+
+	va_list args;
+	va_start(args, column);
+	int messageLen = vsnprintf(messageBuffer, sizeof(messageBuffer), messageFormat, args);
+	va_end(args);
+
+	assert(messageLen >= 0 && messageLen < (int)sizeof(messageBuffer));
+
+	char *message = malloc(messageLen+1);
+	strncpy(message, messageBuffer, messageLen);
+
+	Expr *result = malloc(sizeof(*result));
+	result->type = EXPR_PARSE_ERROR;
+	result->error.v = (ParseError){
+		.message = message,
+		.line = line,
+		.column = column,
+	};
+	return result;
 }
 
 Expr *ParseExpression(TokenStream *ts, int minimumPrecedence, Token stopToken)
@@ -44,9 +71,12 @@ Expr *ParseExpression(TokenStream *ts, int minimumPrecedence, Token stopToken)
 	{
 		if (token.type != TOK_END_OF_STREAM)
 		{
-			fprintf(stderr, "Unexpected token: %d '%c'\n", token.type, token.type);
-			fprintf(stderr, "At: '%s'\n", ts->at);
-			assert(!"TODO: Error reporting (unknown) lhs token");
+			return ErrorExpr(
+				"Unexpected token: %d '%c'\n"
+				"At: %s\n",
+				0, 0, // TODO(jkk): line and column
+				token.type, token.type,
+				ts->at);
 		}
 		return NULL;
 	}
@@ -69,8 +99,12 @@ Expr *ParseExpression(TokenStream *ts, int minimumPrecedence, Token stopToken)
 			break;
 
 		default:
-			assert(!"TODO: Error reporting (unknown) token");
-			return NULL; // TODO(jkk): error reporting
+			return ErrorExpr(
+				"Unexpected token: %d '%c'\n"
+				"At: %s\n",
+				0, 0, // TODO(jkk): line and column
+				tokOp.type, tokOp.type,
+				ts->at);
 		}
 
 		int lPrec, rPrec;
@@ -83,6 +117,11 @@ Expr *ParseExpression(TokenStream *ts, int minimumPrecedence, Token stopToken)
 
 		ts->at = tsTemp.at;
 		Expr *rhs = ParseExpression(ts, rPrec, stopToken);
+
+		if (rhs && rhs->type == EXPR_PARSE_ERROR)
+		{
+			return rhs;
+		}
 
 		Expr *newLhs = malloc(sizeof(*newLhs));
 		newLhs->type = EXPR_BINOP;

@@ -182,6 +182,13 @@ int main(int argc, char const *argv[])
 
 	Expr *parsedExpression = ParseExpression(&ts, 0, (Token){TOK_END_OF_STREAM});
 
+	if (parsedExpression && parsedExpression->type == EXPR_PARSE_ERROR)
+	{
+		ParseError err = parsedExpression->error.v;
+		fprintf(stderr, "Error parsing [location:%d:%d]: (%s)\n", err.line, err.column, err.message);
+		return 1;
+	}
+
 	if (outputOpt & OUTPUT_INFIX_PARENS)
 	{
 		printf("Interpretation (Infix): ");
