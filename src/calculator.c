@@ -8,14 +8,27 @@
 #include "tokenizer.h"
 #include "parser.h"
 
+#define CL_OPTION_LIST(X) \
+	X("-print-infix" , CL_OPTION_PRINT_INFIX , "Print parenthesized expression with infix operators.") \
+	X("-print-s"     , CL_OPTION_PRINT_S     , "Print parenthesized s-expression.") \
+	X("-print-rpn"   , CL_OPTION_PRINT_RPN   , "Print expression in reverse polish notation (RPN).") \
+	//END
+
 void PrintExprInfix(Expr *expr)
 {
-	switch (expr->type) {
+	if (!expr) return;
+
+	bool negated = false;
+	if (expr->h.flags & EXPR_FLAG_NEGATED) negated = true;
+
+	switch (expr->h.type) {
 	case EXPR_NUMBER:
+		if (negated) printf("-");
 		printf("%g", expr->number.v);
 		break;
 
 	case EXPR_BINOP:
+		if (negated) printf("-");
 		printf("(");
 		PrintExprInfix(expr->binop.v.lhs);
 		printf(" %c ", expr->binop.v.op);
@@ -31,12 +44,17 @@ void PrintExprInfix(Expr *expr)
 
 void PrintExprRPN(Expr *expr)
 {
-	switch (expr->type) {
+	bool negated = false;
+	if (expr->h.flags & EXPR_FLAG_NEGATED) negated = true;
+
+	switch (expr->h.type) {
 	case EXPR_NUMBER:
+		if (negated) printf("-");
 		printf("%g", expr->number.v);
 		break;
 
 	case EXPR_BINOP:
+		if (negated) printf("-");
 		PrintExprRPN(expr->binop.v.lhs);
 		printf(" ");
 		PrintExprRPN(expr->binop.v.rhs);
@@ -51,31 +69,44 @@ void PrintExprRPN(Expr *expr)
 
 void PrintExprS(Expr *expr)
 {
-	switch (expr->type) {
-	case EXPR_NUMBER:
-		printf("%g", expr->number.v);
-		break;
+	bool negated = false;
+	if (expr->h.flags & EXPR_FLAG_NEGATED) negated = true;
 
-	case EXPR_BINOP:
-		printf("(%c ", expr->binop.v.op);
-		PrintExprS(expr->binop.v.lhs);
-		printf(" ");
-		PrintExprS(expr->binop.v.rhs);
-		printf(")");
-		break;
+	switch (expr->h.type)
+	{
+		case EXPR_NUMBER:
+		{
+			if (negated) printf("-");
+			printf("%g", expr->number.v);
+		} break;
 
-	case EXPR_PARSE_ERROR:
-		assert(!"TODO: print parse error");
-		break;
+		case EXPR_BINOP:
+		{
+			printf("(%c ", expr->binop.v.op);
+			if (negated) printf("-");
+			PrintExprS(expr->binop.v.lhs);
+			printf(" ");
+			PrintExprS(expr->binop.v.rhs);
+			printf(")");
+		} break;
+
+		case EXPR_PARSE_ERROR:
+		{
+			assert(!"TODO: print parse error");
+		} break;
 	}
 }
 
 double EvalExpr(Expr *expr)
 {
-	switch (expr->type)
+	double result = 0;
+
+	switch (expr->h.type)
 	{
 		case EXPR_NUMBER:
-			return expr->number.v;
+		{
+			result = expr->number.v;
+		} break;
 
 		case EXPR_BINOP:
 		{
@@ -84,78 +115,81 @@ double EvalExpr(Expr *expr)
 			double rresult = EvalExpr(bn.rhs);
 			switch (bn.op)
 			{
-				case '+': return lresult + rresult;
-				case '-': return lresult - rresult;
-				case '*': return lresult * rresult;
-				case '/': return lresult / rresult;
-				case '^': return pow(lresult, rresult);
+				case '+': result = lresult + rresult; break;
+				case '-': result = lresult - rresult; break;
+				case '*': result = lresult * rresult; break;
+				case '/': result = lresult / rresult; break;
+				case '^': result = pow(lresult, rresult); break;
 				default:
 					return 42.0;
 			}
 		} break;
 
 		case EXPR_PARSE_ERROR:
+		{
 			assert(!"TODO: eval parse error");
-			break;
+		} break;
 	}
-	return 1337.0;
+
+	if (expr->h.flags & EXPR_FLAG_NEGATED)
+	{
+		result = -result;
+	}
+
+	return result;
 }
 
 static void ExitPrintUsage(const char *program, int exitCode)
 {
-	fprintf(stderr, "Missing argument.\n");
-	fprintf(stderr, "USAGE: %s <expressions>\n", program);
+#define CL_OPTION_PRINT_FORMAT(optionStr, optionNum, description) "  %-18s %s\n"
+#define CL_OPTION_PRINT_ARGS(optionStr, optionNum, description) ,optionStr, description
+
+	fprintf(stderr,
+		"Usage: %s [Options] <Expression>\n"
+		"Options:\n"
+		CL_OPTION_LIST(CL_OPTION_PRINT_FORMAT)
+		,
+		program
+		CL_OPTION_LIST(CL_OPTION_PRINT_ARGS)
+		);
 	exit(exitCode);
 }
 
+#define CL_OPTION_ENUM(optionStr, optionNum, description) optionNum,
+enum ClOptionType
+{
+	CL_OPTION_NONE = 0,
+	CL_OPTION_LIST(CL_OPTION_ENUM)
+};
 
 int main(int argc, char const *argv[])
 {
 	const char *program = (--argc, *argv++);
 
-	if (argc < 1)
-	{
-		ExitPrintUsage(program, 1);
-	}
-
-	enum OutputOpt
-	{
-		OUTPUT_JUST_RESULT = 0,
-		OUTPUT_INFIX_PARENS = 1,
-		OUTPUT_S_EXPR = 2,
-		OUTPUT_RPN = 4,
-	};
-
-	enum OutputOpt outputOpt = OUTPUT_JUST_RESULT;
+	enum ClOptionType outputOpt = 0;
 
 	for (;;)
 	{
-		if (strcmp("-print-infix", argv[0]) == 0)
-		{
-			--argc;
-			++argv;
-			outputOpt |= OUTPUT_INFIX_PARENS;
-		}
-		else if (strcmp("-print-s", argv[0]) == 0)
-		{
-			--argc;
-			++argv;
-			outputOpt |= OUTPUT_S_EXPR;
-		}
-		else if (strcmp("-print-rpn", argv[0]) == 0)
-		{
-			--argc;
-			++argv;
-			outputOpt |= OUTPUT_RPN;
-		}
-		else if (argc < 1)
+		if (argc < 1)
 		{
 			ExitPrintUsage(program, 1);
 		}
-		else
-		{
-			break;
+
+		bool again = false;
+
+#define CL_OPTION_STRCMP(optionStr, optionNum, description) \
+		if (strcmp((optionStr), argv[0]) == 0) \
+		{ \
+			outputOpt |= (1UL << (optionNum)); \
+			again = true; \
 		}
+
+		CL_OPTION_LIST(CL_OPTION_STRCMP)
+
+		if (!again) break;
+
+		--argc;
+		++argv;
 	}
 
 	unsigned long exprLen = 0;
@@ -182,28 +216,28 @@ int main(int argc, char const *argv[])
 
 	Expr *parsedExpression = ParseExpression(&ts, 0, (Token){TOK_END_OF_STREAM});
 
-	if (parsedExpression && parsedExpression->type == EXPR_PARSE_ERROR)
+	if (parsedExpression && parsedExpression->h.type == EXPR_PARSE_ERROR)
 	{
 		ParseError err = parsedExpression->error.v;
 		fprintf(stderr, "Error parsing [location:%d:%d]: (%s)\n", err.line, err.column, err.message);
 		return 1;
 	}
 
-	if (outputOpt & OUTPUT_INFIX_PARENS)
+	if (outputOpt & (1UL << CL_OPTION_PRINT_INFIX))
 	{
 		printf("Interpretation (Infix): ");
 		PrintExprInfix(parsedExpression);
 		printf("\n");
 	}
 
-	if (outputOpt & OUTPUT_S_EXPR)
+	if (outputOpt & (1UL << CL_OPTION_PRINT_S))
 	{
 		printf("Interpretation (S-expression): ");
 		PrintExprS(parsedExpression);
 		printf("\n");
 	}
 
-	if (outputOpt & OUTPUT_RPN)
+	if (outputOpt & (1UL << CL_OPTION_PRINT_RPN))
 	{
 		printf("Interpretation (RPN): ");
 		PrintExprRPN(parsedExpression);

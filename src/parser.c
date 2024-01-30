@@ -1,9 +1,9 @@
 #include <assert.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 
 #include "parser.h"
 #include "tokenizer.h"
@@ -28,7 +28,7 @@ static void OperatorPrecedence(int op, int *lPrec, int *rPrec)
 
 static Expr *ErrorExpr(const char *restrict messageFormat, int line, int column, ...)
 {
-	static char messageBuffer[512]; // @not-thread-safe
+	char messageBuffer[512];
 
 	va_list args;
 	va_start(args, column);
@@ -41,7 +41,7 @@ static Expr *ErrorExpr(const char *restrict messageFormat, int line, int column,
 	strncpy(message, messageBuffer, messageLen);
 
 	Expr *result = malloc(sizeof(*result));
-	result->type = EXPR_PARSE_ERROR;
+	result->h.type = EXPR_PARSE_ERROR;
 	result->error.v = (ParseError){
 		.message = message,
 		.line = line,
@@ -52,33 +52,53 @@ static Expr *ErrorExpr(const char *restrict messageFormat, int line, int column,
 
 Expr *ParseExpression(TokenStream *ts, int minimumPrecedence, Token stopToken)
 {
-	Token token = NextToken(ts);
+	bool negate = false;
+	Token token;
 
+restart:
+ 	token = NextToken(ts);
 	Expr *lhs;
 
 	if (token.type == TOK_NUMBER)
 	{
 		lhs = malloc(sizeof(*lhs));
-		lhs->type = EXPR_NUMBER;
+		lhs->h.type = EXPR_NUMBER;
 		lhs->number.v = token.number;
 	}
 	else if (token.type == '(')
 	{
 		lhs = ParseExpression(ts, 0, (Token){.type = ')'});
-		NextToken(ts);
+
+		Token endParen = NextToken(ts);
+		if (endParen.type != ')')
+		{
+			return ErrorExpr(
+				"Expected token ')', found: %d '%c'",
+				endParen.line, endParen.column,
+				endParen.type, endParen.type);
+		}
+	}
+	else if (token.type == '-') // Unary minus
+	{
+		negate = !negate;
+		goto restart;
+	}
+	else if (token.type == TOK_END_OF_STREAM)
+	{
+		return NULL;
 	}
 	else
 	{
-		if (token.type != TOK_END_OF_STREAM)
-		{
-			return ErrorExpr(
-				"Unexpected token: %d '%c'\n"
-				"At: %s\n",
-				token.line, token.column,
-				token.type, token.type,
-				ts->at);
-		}
-		return NULL;
+		return ErrorExpr(
+			"Unexpected token: %d '%c'",
+			token.line, token.column,
+			token.type, token.type);
+	}
+
+	if (negate)
+	{
+		// XOR to toggle the negation of the left hand side expressoin
+		lhs->h.flags ^= EXPR_FLAG_NEGATED;
 	}
 
 	for (;;)
@@ -100,11 +120,9 @@ Expr *ParseExpression(TokenStream *ts, int minimumPrecedence, Token stopToken)
 
 		default:
 			return ErrorExpr(
-				"Unexpected token: %d '%c'\n"
-				"At: %s\n",
+				"Unexpected token: %d '%c'",
 				tokOp.line, tokOp.column,
-				tokOp.type, tokOp.type,
-				ts->at);
+				tokOp.type, tokOp.type);
 		}
 
 		int lPrec, rPrec;
@@ -118,13 +136,20 @@ Expr *ParseExpression(TokenStream *ts, int minimumPrecedence, Token stopToken)
 		ts->at = tsTemp.at;
 		Expr *rhs = ParseExpression(ts, rPrec, stopToken);
 
-		if (rhs && rhs->type == EXPR_PARSE_ERROR)
+		if (rhs == NULL)
+		{
+			return ErrorExpr(
+				"Unexpected end of stream",
+				ts->lineCount, GetColumn(ts),
+				tokOp.type, tokOp.type);
+		}
+		else if (rhs->h.type == EXPR_PARSE_ERROR)
 		{
 			return rhs;
 		}
 
 		Expr *newLhs = malloc(sizeof(*newLhs));
-		newLhs->type = EXPR_BINOP;
+		newLhs->h.type = EXPR_BINOP;
 		newLhs->binop.v = (BinNode)
 		{
 			.op = tokOp.type,

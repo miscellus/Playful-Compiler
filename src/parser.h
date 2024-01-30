@@ -49,22 +49,33 @@ typedef enum
 	EXPR_PARSE_ERROR,
 } ExprType;
 
-union Expr_t
+typedef enum
+{
+	EXPR_FLAG_NEGATED = (1 << 0),
+} ExprFlags;
+
+typedef struct ExprHeader_t
 {
 	ExprType type;
+	ExprFlags flags;
+} ExprHeader;
+
+union Expr_t
+{
+	ExprHeader h;
 
 	struct {
-		ExprType type;
+		ExprHeader h;
 		double v;
 	} number;
 
 	struct {
-		ExprType type;
+		ExprHeader h;
 		BinNode v;
 	} binop;
 
 	struct {
-		ExprType type;
+		ExprHeader h;
 		ParseError v;
 	} error;
 };

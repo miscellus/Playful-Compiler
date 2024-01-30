@@ -39,7 +39,7 @@ static void EatSpace(TokenStream *ts)
 	while (ts->at < ts->end && isspace(*ts->at)) Advance(ts);
 }
 
-static int GetColumn(TokenStream *ts)
+int GetColumn(TokenStream *ts)
 {
 	int result = (int)(ts->at - ts->lineStart);
 	assert(result >= 0);

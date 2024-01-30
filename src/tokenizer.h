@@ -27,4 +27,6 @@ TokenStream TokenStreamFromCStr(const char *str);
 
 Token NextToken(TokenStream *ts);
 
+int GetColumn(TokenStream *ts);
+
 #endif
