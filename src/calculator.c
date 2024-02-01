@@ -190,7 +190,7 @@ Options ParseCommandLineOptions(int argc, char const **argv)
 
 	bool needsMoreArguments = true;
 
-	for (;; --argc, ++*argv)
+	for (;;)
 	{
 		if (argc < 1)
 		{
@@ -219,6 +219,9 @@ Options ParseCommandLineOptions(int argc, char const **argv)
 			options.input.direct = argRest;
 			needsMoreArguments = false;
 		}
+
+		--argc;
+		++argv;
 	}
 
 	if (options.flags & CL_OPTION_INPUT_DIRECT)

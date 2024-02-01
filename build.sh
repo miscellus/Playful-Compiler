@@ -32,13 +32,4 @@ set -x
 
 cc $CFLAGS $COMPILATION_UNITS -o $BUILD/calculator $LDFLAGS
 
-cat > $BUILD/input.txt <<EOF 
-(
-  1
- +
-  2
-  *(3 - 4^0))/7 
- -
- 5^2
-EOF
-$BUILD/calculator -print-infix -print-rpn -print-s $BUILD/input.txt
+gdb -tui -args $BUILD/calculator -print-infix -print-rpn -print-s -input='(1 + 2*(3 - 4^0))/7 - 5^2'
