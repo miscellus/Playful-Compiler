@@ -31,5 +31,4 @@ LDFLAGS="
 set -x
 
 cc $CFLAGS $COMPILATION_UNITS -o $BUILD/calculator $LDFLAGS
-
-$BUILD/calculator -print-infix -print-rpn -print-s '(1 + 2*(3 - 4^0))/7 - 5^2'
+$BUILD/calculator -print-infix -print-rpn -print-s -input='(1 + 2*(3 - 4^0))/7 - 5^2'

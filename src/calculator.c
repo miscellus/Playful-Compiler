@@ -9,10 +9,37 @@
 #include "parser.h"
 
 #define CL_OPTION_LIST(X) \
-	X("-print-infix" , CL_OPTION_PRINT_INFIX , "Print parenthesized expression with infix operators.") \
-	X("-print-s"     , CL_OPTION_PRINT_S     , "Print parenthesized s-expression.") \
-	X("-print-rpn"   , CL_OPTION_PRINT_RPN   , "Print expression in reverse polish notation (RPN).") \
+	X("-print-infix" ,                , PRINT_INFIX  , "Print parenthesized expression with infix operators.") \
+	X("-print-s"     ,                , PRINT_S      , "Print parenthesized s-expression.") \
+	X("-print-rpn"   ,                , PRINT_RPN    , "Print expression in reverse polish notation (RPN).") \
+	X("-input="      , "<expression>" , INPUT_DIRECT , "Directly passed input") \
 	//END
+
+#define CL_OPTION_ENUM_BIT_NUM(optionStr, arg0, optionNum, description) CL_OPTION_BIT_NUM_##optionNum,
+enum ClOptionBitIndex
+{
+	CL_OPTION_LIST(CL_OPTION_ENUM_BIT_NUM)
+};
+
+#define CL_OPTION_TYPE(optionStr, arg0, optionNum, description) CL_OPTION_##optionNum = (1 << (CL_OPTION_BIT_NUM_##optionNum)),
+enum OptionFlags
+{
+	CL_OPTION_NONE = 0,
+	CL_OPTION_LIST(CL_OPTION_TYPE)
+};
+
+typedef struct Options_t
+{
+	const char *program;
+	enum OptionFlags flags;
+
+	union
+	{
+		FILE *file;
+		const char *direct;
+	} input;
+
+} Options;
 
 void PrintExprInfix(Expr *expr)
 {
@@ -141,8 +168,8 @@ double EvalExpr(Expr *expr)
 
 static void ExitPrintUsage(const char *program, int exitCode)
 {
-#define CL_OPTION_PRINT_FORMAT(optionStr, optionNum, description) "  %-18s %s\n"
-#define CL_OPTION_PRINT_ARGS(optionStr, optionNum, description) ,optionStr, description
+#define CL_OPTION_PRINT_FORMAT(optionStr, arg0, optionNum, description) "  %-24s %s\n"
+#define CL_OPTION_PRINT_ARGS(optionStr, arg0, optionNum, description) ,optionStr arg0, description
 
 	fprintf(stderr,
 		"Usage: %s [Options] <Expression>\n"
@@ -155,64 +182,113 @@ static void ExitPrintUsage(const char *program, int exitCode)
 	exit(exitCode);
 }
 
-#define CL_OPTION_ENUM(optionStr, optionNum, description) optionNum,
-enum ClOptionType
+Options ParseCommandLineOptions(int argc, char const **argv)
 {
-	CL_OPTION_NONE = 0,
-	CL_OPTION_LIST(CL_OPTION_ENUM)
-};
+	Options options = {0};
 
-int main(int argc, char const *argv[])
-{
-	const char *program = (--argc, *argv++);
+	options.program = (--argc, *argv++);
 
-	enum ClOptionType outputOpt = 0;
+	bool needsMoreArguments = true;
 
 	for (;;)
 	{
 		if (argc < 1)
 		{
-			ExitPrintUsage(program, 1);
+			if (needsMoreArguments) ExitPrintUsage(options.program, 1);
+			else return options;
 		}
 
-		bool again = false;
+		const char *argRest = NULL;
+		enum OptionFlags flag = 0;
 
-#define CL_OPTION_STRCMP(optionStr, optionNum, description) \
-		if (strcmp((optionStr), argv[0]) == 0) \
-		{ \
-			outputOpt |= (1UL << (optionNum)); \
-			again = true; \
-		}
-
+#define CL_OPTION_STRCMP(optionStr, arg0, optionNum, description) \
+		if (strncmp((optionStr), *argv, sizeof(optionStr)-1) == 0) \
+		{\
+			argRest = *argv + sizeof(optionStr)-1;\
+			flag = CL_OPTION_##optionNum;\
+		} else
 		CL_OPTION_LIST(CL_OPTION_STRCMP)
+		{
+			break;
+		}
 
-		if (!again) break;
+		options.flags |= flag;
+
+		if (flag == CL_OPTION_INPUT_DIRECT)
+		{
+			options.input.direct = argRest;
+			needsMoreArguments = false;
+		}
 
 		--argc;
 		++argv;
 	}
 
-	unsigned long exprLen = 0;
-
-	for (int i = 0; i < argc; ++i) {
-		exprLen += strlen(argv[i]);
+	if (options.flags & CL_OPTION_INPUT_DIRECT)
+	{
+		return options;
 	}
 
-	char *const exprBuf = calloc(1, exprLen + 1);
+	if (argc < 1) ExitPrintUsage(options.program, 1);
 
-	char *at = exprBuf;
-	for (int i = 0; i < argc; ++i) {
-		if (i > 0)
+	const char *inputFile = (--argc, *argv++);
+
+	if (strcmp("-", inputFile) == 0)
+	{
+		assert(!"TODO");
+		options.input.file = stdin;
+	}
+	else
+	{
+		options.input.file = fopen(inputFile, "r");
+		if (options.input.file == NULL)
 		{
-			*at++ = ' ';
+			fprintf(stderr, "Could not open file.\n");
+			ExitPrintUsage(options.program, 1);
 		}
-		long len = strlen(argv[i]);
-		memcpy(at, argv[i], len);
-		at += len;
 	}
-	*at = '\0';
 
-	TokenStream ts = TokenStreamFromCStr(exprBuf);
+	return options;
+}
+
+int ReadEntireFile(FILE *file, char **contents, long *contentsLen)
+{
+	fseek(file, 0, SEEK_END);
+	*contentsLen = ftell(file);
+	fseek(file, 0, SEEK_SET);
+
+	*contents = malloc((*contentsLen + 1) * sizeof(**contents));
+
+	if (1 != fread(*contents, *contentsLen, 1, file))
+	{
+		fclose(file);
+		return -1;
+	}
+
+	(*contents)[*contentsLen] = '\0';
+	return 0;
+}
+
+int main(int argc, char const *argv[])
+{
+	Options options = ParseCommandLineOptions(argc, argv);
+
+	const char *input;
+
+	if (options.flags & CL_OPTION_INPUT_DIRECT)
+	{
+		input = options.input.direct;
+	}
+	else
+	{
+		long inputContentsLen;
+		if (ReadEntireFile(options.input.file, (char **)&input, &inputContentsLen) == -1)
+		{
+			ExitPrintUsage(options.program, 1);
+		}
+	}
+
+	TokenStream ts = TokenStreamFromCStr(input);
 
 	Expr *parsedExpression = ParseExpression(&ts, 0, (Token){TOK_END_OF_STREAM});
 
@@ -223,21 +299,21 @@ int main(int argc, char const *argv[])
 		return 1;
 	}
 
-	if (outputOpt & (1UL << CL_OPTION_PRINT_INFIX))
+	if (options.flags & CL_OPTION_PRINT_INFIX)
 	{
 		printf("Interpretation (Infix): ");
 		PrintExprInfix(parsedExpression);
 		printf("\n");
 	}
 
-	if (outputOpt & (1UL << CL_OPTION_PRINT_S))
+	if (options.flags & CL_OPTION_PRINT_S)
 	{
 		printf("Interpretation (S-expression): ");
 		PrintExprS(parsedExpression);
 		printf("\n");
 	}
 
-	if (outputOpt & (1UL << CL_OPTION_PRINT_RPN))
+	if (options.flags & CL_OPTION_PRINT_RPN)
 	{
 		printf("Interpretation (RPN): ");
 		PrintExprRPN(parsedExpression);
