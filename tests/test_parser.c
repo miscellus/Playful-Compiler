@@ -9,16 +9,37 @@ void tearDown(){}
 static Expr *ArrangeExpr(const char *cstr)
 {
 	TokenStream ts = TokenStreamFromCStr(cstr);
-	return ParseExpression(&ts, 0, (Token){TOK_END_OF_STREAM});
+	return ParseExpression(&ts);
 }
 
-void TEST_ParseExpression_EmptyInput_Null(void)
+void TEST_ParseExpression_EmptyInput_UnitExpression(void)
 {
 	// Arrange, Act
 	Expr *expr = ArrangeExpr("");
 
 	// Assert
-	TEST_ASSERT_EQUAL_PTR(NULL, expr);
+	TEST_ASSERT_EQUAL_PTR(EXPR_UNIT, expr->h.type);
+}
+
+void TEST_ParseExpression_BinaryOperatorWithMissingRightHandOperand_ErrorWithExpectedMessage(void)
+{
+	// Arrange, Act
+	Expr *expr = ArrangeExpr("1 + ");
+
+	// Assert
+	TEST_ASSERT_EQUAL_INT32(EXPR_ERROR, expr->h.type);
+	TEST_ASSERT_EQUAL_STRING("Operator '+' missing right hand operand" , expr->error.v.message);
+}
+
+void TEST_ParseExpression_BinaryOperatorWithMissingLeftHandOperand_ErrorWithExpectedMessage(void)
+{
+	// Arrange, Act
+	Expr *expr = ArrangeExpr("* 1");
+
+	// Assert
+	TEST_ASSERT_EQUAL_INT32(EXPR_ERROR, expr->h.type);
+	TEST_ASSERT_EQUAL_STRING("Unexpected token, '*'" , expr->error.v.message);
+
 }
 
 void TEST_ParseExpression_NumberWithSpaces_SingleNumberExpression(void)
@@ -90,7 +111,9 @@ void TEST_ParseExpression_UnaryMinusOnExponent_ExponentNegated(void)
 int main(void)
 {
 	UNITY_BEGIN();
-	RUN_TEST(TEST_ParseExpression_EmptyInput_Null);
+	RUN_TEST(TEST_ParseExpression_EmptyInput_UnitExpression);
+	RUN_TEST(TEST_ParseExpression_BinaryOperatorWithMissingRightHandOperand_ErrorWithExpectedMessage);
+	RUN_TEST(TEST_ParseExpression_BinaryOperatorWithMissingLeftHandOperand_ErrorWithExpectedMessage);
 	RUN_TEST(TEST_ParseExpression_NumberWithSpaces_SingleNumberExpression);
 	RUN_TEST(TEST_ParseExpression_SingleAdditionBinop_1Lhs2Rhs);
 	RUN_TEST(TEST_ParseExpression_UnaryMinusOnNumber_NegationFlagSet);

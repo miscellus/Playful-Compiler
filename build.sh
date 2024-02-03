@@ -12,6 +12,7 @@ COMPILATION_UNITS="
 $SRC/calculator.c
 $SRC/tokenizer.c
 $SRC/parser.c
+$SRC/options.c
 "
 
 CFLAGS="

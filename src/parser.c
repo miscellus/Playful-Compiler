@@ -41,7 +41,7 @@ static Expr *ErrorExpr(const char *restrict messageFormat, int line, int column,
 	strncpy(message, messageBuffer, messageLen);
 
 	Expr *result = malloc(sizeof(*result));
-	result->h.type = EXPR_PARSE_ERROR;
+	result->h.type = EXPR_ERROR;
 	result->error.v = (ParseError){
 		.message = message,
 		.line = line,
@@ -50,7 +50,13 @@ static Expr *ErrorExpr(const char *restrict messageFormat, int line, int column,
 	return result;
 }
 
-Expr *ParseExpression(TokenStream *ts, int minimumPrecedence, Token stopToken)
+Expr *ParseExpression(TokenStream *ts)
+{
+	return ParseSubExpression(ts, 0, (Token){TOK_END_OF_STREAM});
+}
+
+
+Expr *ParseSubExpression(TokenStream *ts, int minimumPrecedence, Token stopToken)
 {
 	bool negate = false;
 	Token token;
@@ -67,15 +73,15 @@ restart:
 	}
 	else if (token.type == '(')
 	{
-		lhs = ParseExpression(ts, 0, (Token){.type = ')'});
+		lhs = ParseSubExpression(ts, 0, (Token){.type = ')'});
 
 		Token endParen = NextToken(ts);
 		if (endParen.type != ')')
 		{
 			return ErrorExpr(
-				"Expected token ')', found: %d '%c'",
+				"Expected token ')', found '%c'",
 				endParen.line, endParen.column,
-				endParen.type, endParen.type);
+				endParen.type);
 		}
 	}
 	else if (token.type == '-') // Unary minus
@@ -85,14 +91,16 @@ restart:
 	}
 	else if (token.type == TOK_END_OF_STREAM)
 	{
-		return NULL;
+		Expr *unit = malloc(sizeof(*unit));
+		unit->h.type = EXPR_UNIT;
+		return unit;
 	}
 	else
 	{
 		return ErrorExpr(
-			"Unexpected token: %d '%c'",
+			"Unexpected token, '%c'",
 			token.line, token.column,
-			token.type, token.type);
+			token.type);
 	}
 
 	if (negate)
@@ -120,9 +128,9 @@ restart:
 
 		default:
 			return ErrorExpr(
-				"Unexpected token: %d '%c'",
+				"Unexpected token, '%c'",
 				tokOp.line, tokOp.column,
-				tokOp.type, tokOp.type);
+				tokOp.type);
 		}
 
 		int lPrec, rPrec;
@@ -134,16 +142,16 @@ restart:
 		}
 
 		ts->at = tsTemp.at;
-		Expr *rhs = ParseExpression(ts, rPrec, stopToken);
+		Expr *rhs = ParseSubExpression(ts, rPrec, stopToken);
 
-		if (rhs == NULL)
+		if (rhs->h.type == EXPR_UNIT)
 		{
 			return ErrorExpr(
-				"Unexpected end of stream",
+				"Operator '%c' missing right hand operand",
 				ts->lineCount, GetColumn(ts),
-				tokOp.type, tokOp.type);
+				tokOp.type);
 		}
-		else if (rhs->h.type == EXPR_PARSE_ERROR)
+		else if (rhs->h.type == EXPR_ERROR)
 		{
 			return rhs;
 		}
