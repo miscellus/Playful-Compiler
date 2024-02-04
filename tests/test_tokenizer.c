@@ -1,11 +1,18 @@
+#include "../src/tokenizer.h"
 #include "unity.h"
 #include "unity_internals.h"
-#include "../src/tokenizer.h"
 
-void setUp(){}
-void tearDown(){}
+void
+setUp()
+{
+}
+void
+tearDown()
+{
+}
 
-void TEST_TokenStreamFromCStr_EmptyInput_EndAtStart(void)
+void
+TEST_TokenStreamFromCStr_EmptyInput_EndAtStart(void)
 {
 	// Arrange, Act
 	TokenStream ts = TokenStreamFromCStr("");
@@ -14,7 +21,8 @@ void TEST_TokenStreamFromCStr_EmptyInput_EndAtStart(void)
 	TEST_ASSERT_EQUAL_PTR(ts.at, ts.end);
 }
 
-void TEST_TokenStreamFromCStr_InputOfLength13_EndAtStartPlus13(void)
+void
+TEST_TokenStreamFromCStr_InputOfLength13_EndAtStartPlus13(void)
 {
 	// Arrange, Act
 	TokenStream ts = TokenStreamFromCStr("Hello, World!");
@@ -23,7 +31,8 @@ void TEST_TokenStreamFromCStr_InputOfLength13_EndAtStartPlus13(void)
 	TEST_ASSERT_EQUAL_PTR(ts.at + 13, ts.end);
 }
 
-void TEST_NextToken_EmptyInput_EmptyOutput(void)
+void
+TEST_NextToken_EmptyInput_EmptyOutput(void)
 {
 	// Arrange
 	TokenStream ts = TokenStreamFromCStr("");
@@ -35,7 +44,8 @@ void TEST_NextToken_EmptyInput_EmptyOutput(void)
 	TEST_ASSERT_EQUAL_INT32(TOK_END_OF_STREAM, token.type);
 }
 
-void TEST_NextToken_NumberInInput_MatchingNumberToken(void)
+void
+TEST_NextToken_NumberInInput_MatchingNumberToken(void)
 {
 	// Arrange
 	TokenStream ts = TokenStreamFromCStr("42");
@@ -48,8 +58,8 @@ void TEST_NextToken_NumberInInput_MatchingNumberToken(void)
 	TEST_ASSERT_EQUAL_DOUBLE(42, token.number);
 }
 
-
-void TEST_NextToken_CharactersBetween1And255_TokenTypeEqualsCharacterOrdinalValue(void)
+void
+TEST_NextToken_CharactersBetween1And255_TokenTypeEqualsCharacterOrdinalValue(void)
 {
 	// Arrange
 	TokenStream ts = TokenStreamFromCStr("+!@\xff");
@@ -67,7 +77,8 @@ void TEST_NextToken_CharactersBetween1And255_TokenTypeEqualsCharacterOrdinalValu
 	TEST_ASSERT_EQUAL_INT32('\xff', tokHexFF.type);
 }
 
-void TEST_NextToken_SeveralLinesAndColumns_ExpectedLineAndColumn(void)
+void
+TEST_NextToken_SeveralLinesAndColumns_ExpectedLineAndColumn(void)
 {
 	// Arrange
 	TokenStream ts = TokenStreamFromCStr("\n\n   .");
@@ -82,7 +93,8 @@ void TEST_NextToken_SeveralLinesAndColumns_ExpectedLineAndColumn(void)
 	TEST_ASSERT_EQUAL_INT32(expectedColumn, token.column);
 }
 
-int main(void)
+int
+main(void)
 {
 	UNITY_BEGIN();
 	RUN_TEST(TEST_TokenStreamFromCStr_EmptyInput_EndAtStart);

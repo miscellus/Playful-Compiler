@@ -1,18 +1,26 @@
+#include "../src/parser.h"
+#include "../src/tokenizer.h"
 #include "unity.h"
 #include "unity_internals.h"
-#include "../src/tokenizer.h"
-#include "../src/parser.h"
 
-void setUp() {}
-void tearDown(){}
+void
+setUp()
+{
+}
+void
+tearDown()
+{
+}
 
-static Expr *ArrangeExpr(const char *cstr)
+static Expr *
+ArrangeExpr(const char *cstr)
 {
 	TokenStream ts = TokenStreamFromCStr(cstr);
 	return ParseExpression(&ts);
 }
 
-void TEST_ParseExpression_EmptyInput_UnitExpression(void)
+void
+TEST_ParseExpression_EmptyInput_UnitExpression(void)
 {
 	// Arrange, Act
 	Expr *expr = ArrangeExpr("");
@@ -21,28 +29,30 @@ void TEST_ParseExpression_EmptyInput_UnitExpression(void)
 	TEST_ASSERT_EQUAL_PTR(EXPR_UNIT, expr->h.type);
 }
 
-void TEST_ParseExpression_BinaryOperatorWithMissingRightHandOperand_ErrorWithExpectedMessage(void)
+void
+TEST_ParseExpression_BinaryOperatorWithMissingRightHandOperand_ErrorWithExpectedMessage(void)
 {
 	// Arrange, Act
 	Expr *expr = ArrangeExpr("1 + ");
 
 	// Assert
 	TEST_ASSERT_EQUAL_INT32(EXPR_ERROR, expr->h.type);
-	TEST_ASSERT_EQUAL_STRING("Operator '+' missing right hand operand" , expr->error.v.message);
+	TEST_ASSERT_EQUAL_STRING("Operator '+' missing right hand operand", expr->error.v.message);
 }
 
-void TEST_ParseExpression_BinaryOperatorWithMissingLeftHandOperand_ErrorWithExpectedMessage(void)
+void
+TEST_ParseExpression_BinaryOperatorWithMissingLeftHandOperand_ErrorWithExpectedMessage(void)
 {
 	// Arrange, Act
 	Expr *expr = ArrangeExpr("* 1");
 
 	// Assert
 	TEST_ASSERT_EQUAL_INT32(EXPR_ERROR, expr->h.type);
-	TEST_ASSERT_EQUAL_STRING("Unexpected token, '*'" , expr->error.v.message);
-
+	TEST_ASSERT_EQUAL_STRING("Unexpected token, '*'", expr->error.v.message);
 }
 
-void TEST_ParseExpression_NumberWithSpaces_SingleNumberExpression(void)
+void
+TEST_ParseExpression_NumberWithSpaces_SingleNumberExpression(void)
 {
 	// Arrange, Act
 	Expr *expr = ArrangeExpr(" 42 ");
@@ -52,7 +62,8 @@ void TEST_ParseExpression_NumberWithSpaces_SingleNumberExpression(void)
 	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, expr->h.type);
 }
 
-void TEST_ParseExpression_SingleAdditionBinop_1Lhs2Rhs(void)
+void
+TEST_ParseExpression_SingleAdditionBinop_1Lhs2Rhs(void)
 {
 	// Arrange, Act
 	Expr *expr = ArrangeExpr("1 + 2");
@@ -72,7 +83,8 @@ void TEST_ParseExpression_SingleAdditionBinop_1Lhs2Rhs(void)
 	TEST_ASSERT_EQUAL_DOUBLE(2.0, rhs->number.v);
 }
 
-void TEST_ParseExpression_UnaryMinusOnNumber_NegationFlagSet(void)
+void
+TEST_ParseExpression_UnaryMinusOnNumber_NegationFlagSet(void)
 {
 	// Arrange, Act
 	Expr *expr = ArrangeExpr("-1");
@@ -82,7 +94,8 @@ void TEST_ParseExpression_UnaryMinusOnNumber_NegationFlagSet(void)
 	TEST_ASSERT_EQUAL_INT32(expectedFlags, expr->h.flags);
 }
 
-void TEST_ParseExpression_UnaryMinusOnParenBinop_NegationFlagSet(void)
+void
+TEST_ParseExpression_UnaryMinusOnParenBinop_NegationFlagSet(void)
 {
 	// Arrange, Act
 	Expr *expr = ArrangeExpr("-(1 + 1)");
@@ -93,7 +106,8 @@ void TEST_ParseExpression_UnaryMinusOnParenBinop_NegationFlagSet(void)
 	TEST_ASSERT_EQUAL_INT32(expectedFlags, expr->h.flags);
 }
 
-void TEST_ParseExpression_UnaryMinusOnExponent_ExponentNegated(void)
+void
+TEST_ParseExpression_UnaryMinusOnExponent_ExponentNegated(void)
 {
 	// Arrange, Act
 	Expr *expr = ArrangeExpr("2^-1");
@@ -107,8 +121,8 @@ void TEST_ParseExpression_UnaryMinusOnExponent_ExponentNegated(void)
 	TEST_ASSERT_EQUAL_INT32(expectedFlags, expr->binop.v.rhs->h.flags);
 }
 
-
-int main(void)
+int
+main(void)
 {
 	UNITY_BEGIN();
 	RUN_TEST(TEST_ParseExpression_EmptyInput_UnitExpression);

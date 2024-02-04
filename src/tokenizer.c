@@ -7,26 +7,27 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int RemainingChars(TokenStream *ts)
+static int
+RemainingChars(TokenStream *ts)
 {
 	return ts->end - ts->at;
 }
 
-static char PeekChar(TokenStream *ts)
+static char
+PeekChar(TokenStream *ts)
 {
-	if (RemainingChars(ts) > 0)
-	{
+	if (RemainingChars(ts) > 0) {
 		return *ts->at;
 	}
 	return 0;
 }
 
-static char Advance(TokenStream *ts)
+static char
+Advance(TokenStream *ts)
 {
 	char c = *ts->at++;
 
-	if (c == '\n')
-	{
+	if (c == '\n') {
 		ts->lineStart = ts->at;
 		++ts->lineCount;
 	}
@@ -34,24 +35,28 @@ static char Advance(TokenStream *ts)
 	return c;
 }
 
-static void EatSpace(TokenStream *ts)
+static void
+EatSpace(TokenStream *ts)
 {
 	while (ts->at < ts->end && isspace(*ts->at)) Advance(ts);
 }
 
-int GetColumn(TokenStream *ts)
+int
+GetColumn(TokenStream *ts)
 {
 	int result = (int)(ts->at - ts->lineStart);
 	assert(result >= 0);
 	return result;
 }
 
-TokenStream TokenStreamFromCStr(const char *str)
+TokenStream
+TokenStreamFromCStr(const char *str)
 {
 	return (TokenStream){str, str + strlen(str), str, 0};
 }
 
-Token NextToken(TokenStream *ts)
+Token
+NextToken(TokenStream *ts)
 {
 	EatSpace(ts);
 
@@ -59,20 +64,17 @@ Token NextToken(TokenStream *ts)
 	result.line = ts->lineCount;
 	result.column = GetColumn(ts);
 
-	if (RemainingChars(ts) <= 0)
-	{
+	if (RemainingChars(ts) <= 0) {
 		result.type = TOK_END_OF_STREAM;
 		return result;
 	}
 
 	const char *tokStart = ts->at;
 
-	if (isdigit(PeekChar(ts)))
-	{
+	if (isdigit(PeekChar(ts))) {
 		char buf[64] = {0};
 		char c;
-		while((c = PeekChar(ts), isdigit(c) || c == '.'))
-		{
+		while ((c = PeekChar(ts), isdigit(c) || c == '.')) {
 			Advance(ts);
 		}
 
@@ -82,8 +84,7 @@ Token NextToken(TokenStream *ts)
 		result.type = TOK_NUMBER;
 		result.number = strtod(buf, NULL);
 	}
-	else
-	{
+	else {
 		result.type = Advance(ts);
 	}
 
