@@ -1,19 +1,32 @@
 #ifndef TOKENIZER_H
 #define TOKENIZER_H
 
-typedef enum TokenType_t {
-	TOK_END_OF_STREAM = 0,
-	TOK_NUMBER = 256
+typedef enum TokenType {
+	TOK_INPUT_END = 0,
+	TOK_PLUS = '+',
+	TOK_MINUS = '-',
+	TOK_ASTERISK = '*',
+	TOK_SLASH = '/',
+	TOK_HAT = '^',
+	TOK_NUMBER = 256,
+	TOK_IDENT
 } TokenType;
 
-typedef struct Token_t {
-	int type;
+typedef struct TokenHeader {
+	TokenType type;
 	int line;
 	int column;
-	double number;
+} TokenHeader;
+
+typedef struct Token {
+	TokenHeader h;
+	union {
+		double number;
+		const char *ident; // TODO(jkk): string type
+	} u;
 } Token;
 
-typedef struct TokenStream_t {
+typedef struct TokenStream {
 	const char *at;
 	const char *const end;
 	const char *lineStart;

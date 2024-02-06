@@ -41,7 +41,7 @@ TEST_NextToken_EmptyInput_EmptyOutput(void)
 	Token token = NextToken(&ts);
 
 	// Assert
-	TEST_ASSERT_EQUAL_INT32(TOK_END_OF_STREAM, token.type);
+	TEST_ASSERT_EQUAL_INT32(TOK_INPUT_END, token.h.type);
 }
 
 void
@@ -54,8 +54,8 @@ TEST_NextToken_NumberInInput_MatchingNumberToken(void)
 	Token token = NextToken(&ts);
 
 	// Assert
-	TEST_ASSERT_EQUAL_INT32(TOK_NUMBER, token.type);
-	TEST_ASSERT_EQUAL_DOUBLE(42, token.number);
+	TEST_ASSERT_EQUAL_INT32(TOK_NUMBER, token.h.type);
+	TEST_ASSERT_EQUAL_DOUBLE(42, token.u.number);
 }
 
 void
@@ -71,10 +71,10 @@ TEST_NextToken_CharactersBetween1And255_TokenTypeEqualsCharacterOrdinalValue(voi
 	Token tokHexFF = NextToken(&ts);
 
 	// Assert
-	TEST_ASSERT_EQUAL_INT32('+', tokPlus.type);
-	TEST_ASSERT_EQUAL_INT32('!', tokExclaim.type);
-	TEST_ASSERT_EQUAL_INT32('@', tokAt.type);
-	TEST_ASSERT_EQUAL_INT32('\xff', tokHexFF.type);
+	TEST_ASSERT_EQUAL_INT32('+', tokPlus.h.type);
+	TEST_ASSERT_EQUAL_INT32('!', tokExclaim.h.type);
+	TEST_ASSERT_EQUAL_INT32('@', tokAt.h.type);
+	TEST_ASSERT_EQUAL_INT32('\xff', tokHexFF.h.type);
 }
 
 void
@@ -89,8 +89,8 @@ TEST_NextToken_SeveralLinesAndColumns_ExpectedLineAndColumn(void)
 	Token token = NextToken(&ts);
 
 	// Assert
-	TEST_ASSERT_EQUAL_INT32(expectedLine, token.line);
-	TEST_ASSERT_EQUAL_INT32(expectedColumn, token.column);
+	TEST_ASSERT_EQUAL_INT32(expectedLine, token.h.line);
+	TEST_ASSERT_EQUAL_INT32(expectedColumn, token.h.column);
 }
 
 int

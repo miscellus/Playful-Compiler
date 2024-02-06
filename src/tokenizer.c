@@ -19,15 +19,17 @@ PeekChar(TokenStream *ts)
 	if (RemainingChars(ts) > 0) {
 		return *ts->at;
 	}
-	return 0;
+
+	return '\0';
 }
 
 static char
-Advance(TokenStream *ts)
+NextChar(TokenStream *ts)
 {
-	char c = *ts->at++;
+	char oldChar = *ts->at;
+	char c = *++ts->at;
 
-	if (c == '\n') {
+	if (oldChar == '\n') {
 		ts->lineStart = ts->at;
 		++ts->lineCount;
 	}
@@ -38,7 +40,7 @@ Advance(TokenStream *ts)
 static void
 EatSpace(TokenStream *ts)
 {
-	while (ts->at < ts->end && isspace(*ts->at)) Advance(ts);
+	while (ts->at < ts->end && isspace(*ts->at)) NextChar(ts);
 }
 
 int
@@ -60,33 +62,45 @@ NextToken(TokenStream *ts)
 {
 	EatSpace(ts);
 
-	Token result = {0};
-	result.line = ts->lineCount;
-	result.column = GetColumn(ts);
+	Token token = {0};
+	token.h.line = ts->lineCount;
+	token.h.column = GetColumn(ts);
 
 	if (RemainingChars(ts) <= 0) {
-		result.type = TOK_END_OF_STREAM;
-		return result;
+		token.h.type = TOK_INPUT_END;
+		return token;
 	}
 
 	const char *tokStart = ts->at;
 
-	if (isdigit(PeekChar(ts))) {
-		char buf[64] = {0};
-		char c;
-		while ((c = PeekChar(ts), isdigit(c) || c == '.')) {
-			Advance(ts);
-		}
+	char buf[128] = {0};
+	char c = PeekChar(ts); // 1 + 1)
 
-		unsigned long copyLength = (unsigned long)(ts->at - tokStart) & 63;
+	if (isdigit(c)) {
+		do {
+			c = NextChar(ts);
+		} while (isdigit(c) || c == '.'); // TODO(jkk): only one radix point please.
+
+		unsigned long copyLength = (unsigned long)(ts->at - tokStart) & (sizeof(buf) - 1);
 		memcpy(buf, tokStart, copyLength);
 		buf[copyLength] = '\0';
-		result.type = TOK_NUMBER;
-		result.number = strtod(buf, NULL);
+		token.h.type = TOK_NUMBER;
+		token.u.number = strtod(buf, NULL);
+	}
+	else if (isalpha(c)) {
+		do {
+			c = NextChar(ts);
+		} while (isalnum(c) || c == '_');
+
+		unsigned long copyLength = (unsigned long)(ts->at - tokStart) & (sizeof(buf) - 1);
+		token.h.type = TOK_IDENT;
+		token.u.ident = calloc(1, (copyLength + 1) * sizeof(*token.u.ident));
+		memcpy((void *)token.u.ident, tokStart, copyLength);
 	}
 	else {
-		result.type = Advance(ts);
+		token.h.type = c;
+		NextChar(ts);
 	}
 
-	return result;
+	return token;
 }

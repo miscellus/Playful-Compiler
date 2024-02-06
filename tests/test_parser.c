@@ -37,7 +37,7 @@ TEST_ParseExpression_BinaryOperatorWithMissingRightHandOperand_ErrorWithExpected
 
 	// Assert
 	TEST_ASSERT_EQUAL_INT32(EXPR_ERROR, expr->h.type);
-	TEST_ASSERT_EQUAL_STRING("Operator '+' missing right hand operand", expr->error.v.message);
+	TEST_ASSERT_EQUAL_STRING("Operator '+' missing right hand operand", expr->u.error.message);
 }
 
 void
@@ -48,7 +48,7 @@ TEST_ParseExpression_BinaryOperatorWithMissingLeftHandOperand_ErrorWithExpectedM
 
 	// Assert
 	TEST_ASSERT_EQUAL_INT32(EXPR_ERROR, expr->h.type);
-	TEST_ASSERT_EQUAL_STRING("Unexpected token, '*'", expr->error.v.message);
+	TEST_ASSERT_EQUAL_STRING("Unexpected token, '*'", expr->u.error.message);
 }
 
 void
@@ -71,16 +71,16 @@ TEST_ParseExpression_SingleAdditionBinop_1Lhs2Rhs(void)
 	// Assert
 	TEST_ASSERT_NOT_NULL(expr);
 	TEST_ASSERT_EQUAL_INT32(EXPR_BINOP, expr->h.type);
-	Expr *lhs = expr->binop.v.lhs;
-	Expr *rhs = expr->binop.v.rhs;
-	TEST_ASSERT_EQUAL_INT32('+', expr->binop.v.op);
+	Expr *lhs = expr->u.binop.lhs;
+	Expr *rhs = expr->u.binop.rhs;
+	TEST_ASSERT_EQUAL_INT32('+', expr->u.binop.op);
 
 	TEST_ASSERT_NOT_NULL(lhs);
 	TEST_ASSERT_NOT_NULL(rhs);
 	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, lhs->h.type);
 	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, rhs->h.type);
-	TEST_ASSERT_EQUAL_DOUBLE(1.0, lhs->number.v);
-	TEST_ASSERT_EQUAL_DOUBLE(2.0, rhs->number.v);
+	TEST_ASSERT_EQUAL_DOUBLE(1.0, lhs->u.number);
+	TEST_ASSERT_EQUAL_DOUBLE(2.0, rhs->u.number);
 }
 
 void
@@ -116,9 +116,9 @@ TEST_ParseExpression_UnaryMinusOnExponent_ExponentNegated(void)
 	// Assert
 	TEST_ASSERT_NOT_NULL(expr);
 	TEST_ASSERT_EQUAL_INT32(EXPR_BINOP, expr->h.type);
-	TEST_ASSERT_NOT_NULL(expr->binop.v.rhs);
-	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, expr->binop.v.rhs->h.type);
-	TEST_ASSERT_EQUAL_INT32(expectedFlags, expr->binop.v.rhs->h.flags);
+	TEST_ASSERT_NOT_NULL(expr->u.binop.rhs);
+	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, expr->u.binop.rhs->h.type);
+	TEST_ASSERT_EQUAL_INT32(expectedFlags, expr->u.binop.rhs->h.flags);
 }
 
 int

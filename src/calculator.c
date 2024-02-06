@@ -24,15 +24,15 @@ PrintExprInfix(Expr *expr)
 
 		case EXPR_NUMBER: {
 			if (negated) printf("-");
-			printf("%g", expr->number.v);
+			printf("%g", expr->u.number);
 		} break;
 
 		case EXPR_BINOP: {
 			if (negated) printf("-");
 			printf("(");
-			PrintExprInfix(expr->binop.v.lhs);
-			printf(" %c ", expr->binop.v.op);
-			PrintExprInfix(expr->binop.v.rhs);
+			PrintExprInfix(expr->u.binop.lhs);
+			printf(" %c ", expr->u.binop.op);
+			PrintExprInfix(expr->u.binop.rhs);
 			printf(")");
 		} break;
 
@@ -55,15 +55,15 @@ PrintExprRPN(Expr *expr)
 
 		case EXPR_NUMBER: {
 			if (negated) printf("-");
-			printf("%g", expr->number.v);
+			printf("%g", expr->u.number);
 		} break;
 
 		case EXPR_BINOP: {
 			if (negated) printf("-");
-			PrintExprRPN(expr->binop.v.lhs);
+			PrintExprRPN(expr->u.binop.lhs);
 			printf(" ");
-			PrintExprRPN(expr->binop.v.rhs);
-			printf(" %c", expr->binop.v.op);
+			PrintExprRPN(expr->u.binop.rhs);
+			printf(" %c", expr->u.binop.op);
 		} break;
 
 		case EXPR_ERROR: {
@@ -85,15 +85,15 @@ PrintExprS(Expr *expr)
 
 		case EXPR_NUMBER: {
 			if (negated) printf("-");
-			printf("%g", expr->number.v);
+			printf("%g", expr->u.number);
 		} break;
 
 		case EXPR_BINOP: {
-			printf("(%c ", expr->binop.v.op);
+			printf("(%c ", expr->u.binop.op);
 			if (negated) printf("-");
-			PrintExprS(expr->binop.v.lhs);
+			PrintExprS(expr->u.binop.lhs);
 			printf(" ");
-			PrintExprS(expr->binop.v.rhs);
+			PrintExprS(expr->u.binop.rhs);
 			printf(")");
 		} break;
 
@@ -114,11 +114,11 @@ EvalExpr(Expr *expr)
 		} break;
 
 		case EXPR_NUMBER: {
-			result = expr->number.v;
+			result = expr->u.number;
 		} break;
 
 		case EXPR_BINOP: {
-			BinNode bn = expr->binop.v;
+			BinNode bn = expr->u.binop;
 			double lresult = EvalExpr(bn.lhs);
 			double rresult = EvalExpr(bn.rhs);
 			switch (bn.op) {
@@ -184,7 +184,7 @@ main(int argc, char const *argv[])
 	assert(expr);
 
 	if (expr && expr->h.type == EXPR_ERROR) {
-		ParseError err = expr->error.v;
+		ParseError err = expr->u.error;
 		fprintf(stderr, "Error parsing [location:%d:%d]: (%s)\n", err.line, err.column, err.message);
 		return 1;
 	}
