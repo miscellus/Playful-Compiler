@@ -76,7 +76,7 @@ restart:
 	if (token.h.type == TOK_IDENT) {
 		lhs = malloc(sizeof(*lhs));
 		lhs->h.type = EXPR_VARIABLE;
-		// lhs->u.identifier =
+		lhs->u.variable.ident = token.u.ident;
 	}
 	else if (token.h.type == TOK_NUMBER) {
 		lhs = malloc(sizeof(*lhs));
@@ -164,7 +164,7 @@ restart:
 
 		Expr *newLhs = malloc(sizeof(*newLhs));
 		newLhs->h.type = EXPR_BINOP;
-		newLhs->u.binop = (BinNode){
+		newLhs->u.binop = (BinaryOpExpr){
 		    .op = (Operator)tokOp.h.type,
 		    .lhs = lhs,
 		    .rhs = rhs,

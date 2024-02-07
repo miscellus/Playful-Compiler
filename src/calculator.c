@@ -37,7 +37,7 @@ PrintExprInfix(Expr *expr)
 		} break;
 
 		case EXPR_VARIABLE: {
-			printf("TODO(VARIABLE)");
+			printf("%s", expr->u.variable.ident);
 		} break;
 
 		case EXPR_ERROR: {
@@ -71,7 +71,7 @@ PrintExprRPN(Expr *expr)
 		} break;
 
 		case EXPR_VARIABLE: {
-			printf("TODO(VARIABLE)");
+			printf("%s", expr->u.variable.ident);
 		} break;
 
 		case EXPR_ERROR: {
@@ -106,7 +106,7 @@ PrintExprS(Expr *expr)
 		} break;
 
 		case EXPR_VARIABLE: {
-			printf("TODO(VARIABLE)");
+			printf("(var \"%s\")", expr->u.variable.ident);
 		} break;
 
 		case EXPR_ERROR: {
@@ -130,10 +130,10 @@ EvalExpr(Expr *expr)
 		} break;
 
 		case EXPR_BINOP: {
-			BinNode bn = expr->u.binop;
-			double lresult = EvalExpr(bn.lhs);
-			double rresult = EvalExpr(bn.rhs);
-			switch (bn.op) {
+			BinaryOpExpr binOpExpr = expr->u.binop;
+			double lresult = EvalExpr(binOpExpr.lhs);
+			double rresult = EvalExpr(binOpExpr.rhs);
+			switch (binOpExpr.op) {
 				case '+': result = lresult + rresult; break;
 				case '-': result = lresult - rresult; break;
 				case '*': result = lresult * rresult; break;

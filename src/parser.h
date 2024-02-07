@@ -28,11 +28,15 @@ typedef enum {
 	OP_EXPONENT = '^',
 } Operator;
 
-typedef struct BinNode {
+typedef struct BinaryOpExpr_t {
 	Operator op;
 	Expr *lhs;
 	Expr *rhs;
-} BinNode;
+} BinaryOpExpr;
+
+typedef struct VariableExpr {
+	const char *ident;
+} VariableExpr;
 
 typedef struct ParseError {
 	const char *message;
@@ -62,7 +66,8 @@ struct Expr {
 
 	union {
 		double number;
-		BinNode binop;
+		VariableExpr variable;
+		BinaryOpExpr binop;
 		ParseError error;
 	} u;
 };

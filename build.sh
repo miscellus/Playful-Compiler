@@ -32,4 +32,4 @@ LDFLAGS="
 set -x
 
 cc $CFLAGS $COMPILATION_UNITS -o $BUILD/calculator $LDFLAGS
-$BUILD/calculator -print-infix -print-rpn -print-s -input='Alpha = (1 + 2*(3 - 4^0))/7 - 5^2'
+$BUILD/calculator -print-infix -print-rpn -print-s -input='Gamma = Beta = Alpha = (1 + 2*(3 - 4^0))/7 - 5^2'
