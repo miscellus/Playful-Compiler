@@ -59,7 +59,7 @@ TEST_ParseExpression_NumberWithSpaces_SingleNumberExpression(void)
 
 	// Assert
 	TEST_ASSERT_NOT_NULL(expr);
-	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, expr->h.type);
+	TEST_ASSERT_EQUAL_INT32(EXPR_LITERAL_FLOAT64, expr->h.type);
 }
 
 void
@@ -77,8 +77,8 @@ TEST_ParseExpression_SingleAdditionBinop_1Lhs2Rhs(void)
 
 	TEST_ASSERT_NOT_NULL(lhs);
 	TEST_ASSERT_NOT_NULL(rhs);
-	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, lhs->h.type);
-	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, rhs->h.type);
+	TEST_ASSERT_EQUAL_INT32(EXPR_LITERAL_FLOAT64, lhs->h.type);
+	TEST_ASSERT_EQUAL_INT32(EXPR_LITERAL_FLOAT64, rhs->h.type);
 	TEST_ASSERT_EQUAL_DOUBLE(1.0, lhs->u.number);
 	TEST_ASSERT_EQUAL_DOUBLE(2.0, rhs->u.number);
 }
@@ -117,7 +117,7 @@ TEST_ParseExpression_UnaryMinusOnExponent_ExponentNegated(void)
 	TEST_ASSERT_NOT_NULL(expr);
 	TEST_ASSERT_EQUAL_INT32(EXPR_BINOP, expr->h.type);
 	TEST_ASSERT_NOT_NULL(expr->u.binop.rhs);
-	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, expr->u.binop.rhs->h.type);
+	TEST_ASSERT_EQUAL_INT32(EXPR_LITERAL_FLOAT64, expr->u.binop.rhs->h.type);
 	TEST_ASSERT_EQUAL_INT32(expectedFlags, expr->u.binop.rhs->h.flags);
 }
 

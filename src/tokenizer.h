@@ -3,6 +3,7 @@
 
 typedef enum TokenType {
 	TOK_INPUT_END = 0,
+	TOK_EQUALS = '=',
 	TOK_PLUS = '+',
 	TOK_MINUS = '-',
 	TOK_ASTERISK = '*',

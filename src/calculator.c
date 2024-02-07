@@ -22,7 +22,7 @@ PrintExprInfix(Expr *expr)
 			printf("()");
 		} break;
 
-		case EXPR_NUMBER: {
+		case EXPR_LITERAL_FLOAT64: {
 			if (negated) printf("-");
 			printf("%g", expr->u.number);
 		} break;
@@ -34,6 +34,10 @@ PrintExprInfix(Expr *expr)
 			printf(" %c ", expr->u.binop.op);
 			PrintExprInfix(expr->u.binop.rhs);
 			printf(")");
+		} break;
+
+		case EXPR_VARIABLE: {
+			printf("TODO(VARIABLE)");
 		} break;
 
 		case EXPR_ERROR: {
@@ -53,7 +57,7 @@ PrintExprRPN(Expr *expr)
 			printf("()");
 		} break;
 
-		case EXPR_NUMBER: {
+		case EXPR_LITERAL_FLOAT64: {
 			if (negated) printf("-");
 			printf("%g", expr->u.number);
 		} break;
@@ -64,6 +68,10 @@ PrintExprRPN(Expr *expr)
 			printf(" ");
 			PrintExprRPN(expr->u.binop.rhs);
 			printf(" %c", expr->u.binop.op);
+		} break;
+
+		case EXPR_VARIABLE: {
+			printf("TODO(VARIABLE)");
 		} break;
 
 		case EXPR_ERROR: {
@@ -83,7 +91,7 @@ PrintExprS(Expr *expr)
 			printf("()");
 		} break;
 
-		case EXPR_NUMBER: {
+		case EXPR_LITERAL_FLOAT64: {
 			if (negated) printf("-");
 			printf("%g", expr->u.number);
 		} break;
@@ -95,6 +103,10 @@ PrintExprS(Expr *expr)
 			printf(" ");
 			PrintExprS(expr->u.binop.rhs);
 			printf(")");
+		} break;
+
+		case EXPR_VARIABLE: {
+			printf("TODO(VARIABLE)");
 		} break;
 
 		case EXPR_ERROR: {
@@ -113,7 +125,7 @@ EvalExpr(Expr *expr)
 			assert(!"The unit expression does not have a numeric value.");
 		} break;
 
-		case EXPR_NUMBER: {
+		case EXPR_LITERAL_FLOAT64: {
 			result = expr->u.number;
 		} break;
 
@@ -129,6 +141,10 @@ EvalExpr(Expr *expr)
 				case '^': result = pow(lresult, rresult); break;
 				default: return 42.0;
 			}
+		} break;
+
+		case EXPR_VARIABLE: {
+			return 0; // TODO(jkk): Symbol Table
 		} break;
 
 		case EXPR_ERROR: {

@@ -66,13 +66,21 @@ ParseSubExpression(TokenStream *ts, int minimumPrecedence, Token stopToken)
 	bool negate = false;
 	Token token;
 
+	//
+	// Parse LValue
+	//
 restart:
 	token = NextToken(ts);
 	Expr *lhs;
 
-	if (token.h.type == TOK_NUMBER) {
+	if (token.h.type == TOK_IDENT) {
 		lhs = malloc(sizeof(*lhs));
-		lhs->h.type = EXPR_NUMBER;
+		lhs->h.type = EXPR_VARIABLE;
+		// lhs->u.identifier =
+	}
+	else if (token.h.type == TOK_NUMBER) {
+		lhs = malloc(sizeof(*lhs));
+		lhs->h.type = EXPR_LITERAL_FLOAT64;
 		lhs->u.number = token.u.number;
 	}
 	else if (token.h.type == '(') {
@@ -102,6 +110,9 @@ restart:
 		lhs->h.flags ^= EXPR_FLAG_NEGATED;
 	}
 
+	//
+	// Parse RValue
+	//
 	for (;;) {
 		TokenStream tsTemp = *ts;
 		Token tokOp = NextToken(&tsTemp);
@@ -109,6 +120,7 @@ restart:
 		if (tokOp.h.type == stopToken.h.type) return lhs;
 
 		switch (tokOp.h.type) {
+			case '=':
 			case '+':
 			case '-':
 			case '*':
