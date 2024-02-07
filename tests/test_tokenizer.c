@@ -1,11 +1,18 @@
+#include "../src/tokenizer.h"
 #include "unity.h"
 #include "unity_internals.h"
-#include "../src/tokenizer.h"
 
-void setUp(){}
-void tearDown(){}
+void
+setUp()
+{
+}
+void
+tearDown()
+{
+}
 
-void TEST_TokenStreamFromCStr_EmptyInput_EndAtStart(void)
+void
+TEST_TokenStreamFromCStr_EmptyInput_EndAtStart(void)
 {
 	// Arrange, Act
 	TokenStream ts = TokenStreamFromCStr("");
@@ -14,7 +21,8 @@ void TEST_TokenStreamFromCStr_EmptyInput_EndAtStart(void)
 	TEST_ASSERT_EQUAL_PTR(ts.at, ts.end);
 }
 
-void TEST_TokenStreamFromCStr_InputOfLength13_EndAtStartPlus13(void)
+void
+TEST_TokenStreamFromCStr_InputOfLength13_EndAtStartPlus13(void)
 {
 	// Arrange, Act
 	TokenStream ts = TokenStreamFromCStr("Hello, World!");
@@ -23,7 +31,8 @@ void TEST_TokenStreamFromCStr_InputOfLength13_EndAtStartPlus13(void)
 	TEST_ASSERT_EQUAL_PTR(ts.at + 13, ts.end);
 }
 
-void TEST_NextToken_EmptyInput_EmptyOutput(void)
+void
+TEST_NextToken_EmptyInput_EmptyOutput(void)
 {
 	// Arrange
 	TokenStream ts = TokenStreamFromCStr("");
@@ -32,10 +41,11 @@ void TEST_NextToken_EmptyInput_EmptyOutput(void)
 	Token token = NextToken(&ts);
 
 	// Assert
-	TEST_ASSERT_EQUAL_INT32(TOK_END_OF_STREAM, token.type);
+	TEST_ASSERT_EQUAL_INT32(TOK_INPUT_END, token.h.type);
 }
 
-void TEST_NextToken_NumberInInput_MatchingNumberToken(void)
+void
+TEST_NextToken_NumberInInput_MatchingNumberToken(void)
 {
 	// Arrange
 	TokenStream ts = TokenStreamFromCStr("42");
@@ -44,12 +54,12 @@ void TEST_NextToken_NumberInInput_MatchingNumberToken(void)
 	Token token = NextToken(&ts);
 
 	// Assert
-	TEST_ASSERT_EQUAL_INT32(TOK_NUMBER, token.type);
-	TEST_ASSERT_EQUAL_DOUBLE(42, token.number);
+	TEST_ASSERT_EQUAL_INT32(TOK_NUMBER, token.h.type);
+	TEST_ASSERT_EQUAL_DOUBLE(42, token.u.number);
 }
 
-
-void TEST_NextToken_CharactersBetween1And255_TokenTypeEqualsCharacterOrdinalValue(void)
+void
+TEST_NextToken_CharactersBetween1And255_TokenTypeEqualsCharacterOrdinalValue(void)
 {
 	// Arrange
 	TokenStream ts = TokenStreamFromCStr("+!@\xff");
@@ -61,13 +71,14 @@ void TEST_NextToken_CharactersBetween1And255_TokenTypeEqualsCharacterOrdinalValu
 	Token tokHexFF = NextToken(&ts);
 
 	// Assert
-	TEST_ASSERT_EQUAL_INT32('+', tokPlus.type);
-	TEST_ASSERT_EQUAL_INT32('!', tokExclaim.type);
-	TEST_ASSERT_EQUAL_INT32('@', tokAt.type);
-	TEST_ASSERT_EQUAL_INT32('\xff', tokHexFF.type);
+	TEST_ASSERT_EQUAL_INT32('+', tokPlus.h.type);
+	TEST_ASSERT_EQUAL_INT32('!', tokExclaim.h.type);
+	TEST_ASSERT_EQUAL_INT32('@', tokAt.h.type);
+	TEST_ASSERT_EQUAL_INT32('\xff', tokHexFF.h.type);
 }
 
-void TEST_NextToken_SeveralLinesAndColumns_ExpectedLineAndColumn(void)
+void
+TEST_NextToken_SeveralLinesAndColumns_ExpectedLineAndColumn(void)
 {
 	// Arrange
 	TokenStream ts = TokenStreamFromCStr("\n\n   .");
@@ -78,11 +89,12 @@ void TEST_NextToken_SeveralLinesAndColumns_ExpectedLineAndColumn(void)
 	Token token = NextToken(&ts);
 
 	// Assert
-	TEST_ASSERT_EQUAL_INT32(expectedLine, token.line);
-	TEST_ASSERT_EQUAL_INT32(expectedColumn, token.column);
+	TEST_ASSERT_EQUAL_INT32(expectedLine, token.h.line);
+	TEST_ASSERT_EQUAL_INT32(expectedColumn, token.h.column);
 }
 
-int main(void)
+int
+main(void)
 {
 	UNITY_BEGIN();
 	RUN_TEST(TEST_TokenStreamFromCStr_EmptyInput_EndAtStart);
