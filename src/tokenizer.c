@@ -26,15 +26,12 @@ PeekChar(TokenStream *ts)
 static char
 NextChar(TokenStream *ts)
 {
-	char oldChar = *ts->at;
-	char c = *++ts->at;
-
-	if (oldChar == '\n') {
+	assert(ts->at < ts->end);
+	if (*ts->at++ == '\n') {
 		ts->lineStart = ts->at;
 		++ts->lineCount;
 	}
-
-	return c;
+	return *ts->at;
 }
 
 static void
@@ -57,6 +54,41 @@ TokenStreamFromCStr(const char *str)
 	return (TokenStream){str, str + strlen(str), str, 0};
 }
 
+static void
+NumberToken(TokenStream *ts, Token *outToken)
+{
+	char buf[128] = {0};
+	const char *tokStart = ts->at;
+
+	char c;
+	do {
+		c = NextChar(ts);
+	} while (isdigit(c) || c == '.'); // TODO(jkk): only one radix point please.
+
+	unsigned long copyLength = (unsigned long)(ts->at - tokStart) & (sizeof(buf) - 1);
+	memcpy(buf, tokStart, copyLength);
+	buf[copyLength] = '\0';
+
+	outToken->h.type = TOK_NUMBER;
+	outToken->u.number = strtod(buf, NULL);
+}
+
+static void
+IdentToken(TokenStream *ts, Token *outToken)
+{
+	const char *tokStart = ts->at;
+
+	char c;
+	do {
+		c = NextChar(ts);
+	} while (isalnum(c) || c == '_');
+
+	unsigned long copyLength = (unsigned long)(ts->at - tokStart);
+	outToken->h.type = TOK_IDENT;
+	outToken->u.ident = calloc(1, (copyLength + 1) * sizeof(*outToken->u.ident));
+	memcpy((void *)outToken->u.ident, tokStart, copyLength);
+}
+
 Token
 NextToken(TokenStream *ts)
 {
@@ -66,36 +98,16 @@ NextToken(TokenStream *ts)
 	token.h.line = ts->lineCount;
 	token.h.column = GetColumn(ts);
 
-	if (RemainingChars(ts) <= 0) {
-		token.h.type = TOK_INPUT_END;
-		return token;
-	}
-
-	const char *tokStart = ts->at;
-
-	char buf[128] = {0};
-	char c = PeekChar(ts); // 1 + 1)
+	char c = PeekChar(ts);
 
 	if (isdigit(c)) {
-		do {
-			c = NextChar(ts);
-		} while (isdigit(c) || c == '.'); // TODO(jkk): only one radix point please.
-
-		unsigned long copyLength = (unsigned long)(ts->at - tokStart) & (sizeof(buf) - 1);
-		memcpy(buf, tokStart, copyLength);
-		buf[copyLength] = '\0';
-		token.h.type = TOK_NUMBER;
-		token.u.number = strtod(buf, NULL);
+		NumberToken(ts, &token);
 	}
 	else if (isalpha(c)) {
-		do {
-			c = NextChar(ts);
-		} while (isalnum(c) || c == '_');
-
-		unsigned long copyLength = (unsigned long)(ts->at - tokStart) & (sizeof(buf) - 1);
-		token.h.type = TOK_IDENT;
-		token.u.ident = calloc(1, (copyLength + 1) * sizeof(*token.u.ident));
-		memcpy((void *)token.u.ident, tokStart, copyLength);
+		IdentToken(ts, &token);
+	}
+	else if (c == '\0') {
+		token.h.type = TOK_INPUT_END;
 	}
 	else {
 		token.h.type = c;
