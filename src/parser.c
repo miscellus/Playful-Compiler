@@ -120,7 +120,12 @@ restart:
 		if (tokOp.h.type == stopToken.h.type) return lhs;
 
 		switch (tokOp.h.type) {
-			case '=':
+			case '=': {
+				if (lhs->h.type != EXPR_VARIABLE) {
+					return ErrorExpr(tokOp.h.line, tokOp.h.column, "Left-hand side of operator '=' must be a variable");
+				}
+			} break;
+
 			case '+':
 			case '-':
 			case '*':
