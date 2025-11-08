@@ -46,20 +46,20 @@ void PrintExprInfix(Expr *expr)
 	if (!expr) return;
 
 	bool negated = false;
-	if (expr->h.flags & EXPR_FLAG_NEGATED) negated = true;
+	if (expr->flags & EXPR_FLAG_NEGATED) negated = true;
 
-	switch (expr->h.type) {
+	switch (expr->type) {
 	case EXPR_NUMBER:
 		if (negated) printf("-");
-		printf("%g", expr->number.v);
+		printf("%g", expr->as.number);
 		break;
 
 	case EXPR_BINOP:
 		if (negated) printf("-");
 		printf("(");
-		PrintExprInfix(expr->binop.v.lhs);
-		printf(" %c ", expr->binop.v.op);
-		PrintExprInfix(expr->binop.v.rhs);
+		PrintExprInfix(expr->as.binop.lhs);
+		printf(" %c ", expr->as.binop.op);
+		PrintExprInfix(expr->as.binop.rhs);
 		printf(")");
 		break;
 
@@ -72,20 +72,20 @@ void PrintExprInfix(Expr *expr)
 void PrintExprRPN(Expr *expr)
 {
 	bool negated = false;
-	if (expr->h.flags & EXPR_FLAG_NEGATED) negated = true;
+	if (expr->flags & EXPR_FLAG_NEGATED) negated = true;
 
-	switch (expr->h.type) {
+	switch (expr->type) {
 	case EXPR_NUMBER:
 		if (negated) printf("-");
-		printf("%g", expr->number.v);
+		printf("%g", expr->as.number);
 		break;
 
 	case EXPR_BINOP:
 		if (negated) printf("-");
-		PrintExprRPN(expr->binop.v.lhs);
+		PrintExprRPN(expr->as.binop.lhs);
 		printf(" ");
-		PrintExprRPN(expr->binop.v.rhs);
-		printf(" %c", expr->binop.v.op);
+		PrintExprRPN(expr->as.binop.rhs);
+		printf(" %c", expr->as.binop.op);
 		break;
 
 	case EXPR_PARSE_ERROR:
@@ -97,23 +97,23 @@ void PrintExprRPN(Expr *expr)
 void PrintExprS(Expr *expr)
 {
 	bool negated = false;
-	if (expr->h.flags & EXPR_FLAG_NEGATED) negated = true;
+	if (expr->flags & EXPR_FLAG_NEGATED) negated = true;
 
-	switch (expr->h.type)
+	switch (expr->type)
 	{
 		case EXPR_NUMBER:
 		{
 			if (negated) printf("-");
-			printf("%g", expr->number.v);
+			printf("%g", expr->as.number);
 		} break;
 
 		case EXPR_BINOP:
 		{
-			printf("(%c ", expr->binop.v.op);
+			printf("(%c ", expr->as.binop.op);
 			if (negated) printf("-");
-			PrintExprS(expr->binop.v.lhs);
+			PrintExprS(expr->as.binop.lhs);
 			printf(" ");
-			PrintExprS(expr->binop.v.rhs);
+			PrintExprS(expr->as.binop.rhs);
 			printf(")");
 		} break;
 
@@ -128,16 +128,16 @@ double EvalExpr(Expr *expr)
 {
 	double result = 0;
 
-	switch (expr->h.type)
+	switch (expr->type)
 	{
 		case EXPR_NUMBER:
 		{
-			result = expr->number.v;
+			result = expr->as.number;
 		} break;
 
 		case EXPR_BINOP:
 		{
-			BinNode bn = expr->binop.v;
+			BinNode bn = expr->as.binop;
 			double lresult = EvalExpr(bn.lhs);
 			double rresult = EvalExpr(bn.rhs);
 			switch (bn.op)
@@ -156,9 +156,12 @@ double EvalExpr(Expr *expr)
 		{
 			assert(!"TODO: eval parse error");
 		} break;
+
+		default:
+			assert(0 && "Invalid code path!");
 	}
 
-	if (expr->h.flags & EXPR_FLAG_NEGATED)
+	if (expr->flags & EXPR_FLAG_NEGATED)
 	{
 		result = -result;
 	}
@@ -292,9 +295,9 @@ int main(int argc, char const *argv[])
 
 	Expr *parsedExpression = ParseExpression(&ts, 0, (Token){TOK_END_OF_STREAM});
 
-	if (parsedExpression && parsedExpression->h.type == EXPR_PARSE_ERROR)
+	if (parsedExpression && parsedExpression->type == EXPR_PARSE_ERROR)
 	{
-		ParseError err = parsedExpression->error.v;
+		ParseError err = parsedExpression->as.error;
 		fprintf(stderr, "Error parsing [location:%d:%d]: (%s)\n", err.line, err.column, err.message);
 		return 1;
 	}

@@ -41,8 +41,8 @@ static Expr *ErrorExpr(const char *restrict messageFormat, int line, int column,
 	strncpy(message, messageBuffer, messageLen);
 
 	Expr *result = malloc(sizeof(*result));
-	result->h.type = EXPR_PARSE_ERROR;
-	result->error.v = (ParseError){
+	result->type = EXPR_PARSE_ERROR;
+	result->as.error = (ParseError){
 		.message = message,
 		.line = line,
 		.column = column,
@@ -61,9 +61,9 @@ restart:
 
 	if (token.type == TOK_NUMBER)
 	{
-		lhs = malloc(sizeof(*lhs));
-		lhs->h.type = EXPR_NUMBER;
-		lhs->number.v = token.number;
+		lhs = calloc(1, sizeof(*lhs));
+		lhs->type = EXPR_NUMBER;
+		lhs->as.number = token.number;
 	}
 	else if (token.type == '(')
 	{
@@ -98,7 +98,7 @@ restart:
 	if (negate)
 	{
 		// XOR to toggle the negation of the left hand side expressoin
-		lhs->h.flags ^= EXPR_FLAG_NEGATED;
+		lhs->flags ^= EXPR_FLAG_NEGATED;
 	}
 
 	for (;;)
@@ -143,14 +143,15 @@ restart:
 				ts->lineCount, GetColumn(ts),
 				tokOp.type, tokOp.type);
 		}
-		else if (rhs->h.type == EXPR_PARSE_ERROR)
+		else if (rhs->type == EXPR_PARSE_ERROR)
 		{
 			return rhs;
 		}
 
-		Expr *newLhs = malloc(sizeof(*newLhs));
-		newLhs->h.type = EXPR_BINOP;
-		newLhs->binop.v = (BinNode)
+		Expr *newLhs = calloc(1, sizeof(*newLhs));
+		newLhs->type = EXPR_BINOP;
+		newLhs->flags = 0;
+		newLhs->as.binop = (BinNode)
 		{
 			.op = tokOp.type,
 			.lhs = lhs,

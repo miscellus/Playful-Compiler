@@ -14,11 +14,6 @@
 	X('^' , PREC_EXP    ,              , ASSOC_RIGHT) \
 	// END
 
-typedef struct BinNode_t BinNode;
-typedef union Expr_t Expr;
-typedef struct ParseError_t ParseError;
-
-
 typedef enum
 {
 	OP_ADD = '+',
@@ -28,19 +23,21 @@ typedef enum
 	OP_EXP = '^',
 } Operator;
 
-struct BinNode_t
+typedef struct Expr_t Expr;
+
+typedef struct BinNode_t
 {
 	Operator op;
 	Expr *lhs;
 	Expr *rhs;
-};
+} BinNode;
 
-struct ParseError_t
+typedef struct ParseError_t
 {
 	const char *message;
 	int line;
 	int column;
-};
+} ParseError;
 
 typedef enum
 {
@@ -54,30 +51,17 @@ typedef enum
 	EXPR_FLAG_NEGATED = (1 << 0),
 } ExprFlags;
 
-typedef struct ExprHeader_t
+struct Expr_t
 {
 	ExprType type;
 	ExprFlags flags;
-} ExprHeader;
 
-union Expr_t
-{
-	ExprHeader h;
-
-	struct {
-		ExprHeader h;
-		double v;
-	} number;
-
-	struct {
-		ExprHeader h;
-		BinNode v;
-	} binop;
-
-	struct {
-		ExprHeader h;
-		ParseError v;
-	} error;
+	union
+	{
+		double number;
+		BinNode binop;
+		ParseError error;
+	} as;
 };
 
 
