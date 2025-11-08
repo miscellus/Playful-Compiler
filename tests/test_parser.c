@@ -28,7 +28,7 @@ void TEST_ParseExpression_NumberWithSpaces_SingleNumberExpression(void)
 
 	// Assert
 	TEST_ASSERT_NOT_NULL(expr);
-	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, expr->h.type);
+	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, expr->type);
 }
 
 void TEST_ParseExpression_SingleAdditionBinop_1Lhs2Rhs(void)
@@ -38,17 +38,17 @@ void TEST_ParseExpression_SingleAdditionBinop_1Lhs2Rhs(void)
 
 	// Assert
 	TEST_ASSERT_NOT_NULL(expr);
-	TEST_ASSERT_EQUAL_INT32(EXPR_BINOP, expr->h.type);
-	Expr *lhs = expr->binop.v.lhs;
-	Expr *rhs = expr->binop.v.rhs;
-	TEST_ASSERT_EQUAL_INT32('+', expr->binop.v.op);
+	TEST_ASSERT_EQUAL_INT32(EXPR_BINOP, expr->type);
+	Expr *lhs = expr->as.binop.lhs;
+	Expr *rhs = expr->as.binop.rhs;
+	TEST_ASSERT_EQUAL_INT32('+', expr->as.binop.op);
 
 	TEST_ASSERT_NOT_NULL(lhs);
 	TEST_ASSERT_NOT_NULL(rhs);
-	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, lhs->h.type);
-	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, rhs->h.type);
-	TEST_ASSERT_EQUAL_DOUBLE(1.0, lhs->number.v);
-	TEST_ASSERT_EQUAL_DOUBLE(2.0, rhs->number.v);
+	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, lhs->type);
+	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, rhs->type);
+	TEST_ASSERT_EQUAL_DOUBLE(1.0, lhs->as.number);
+	TEST_ASSERT_EQUAL_DOUBLE(2.0, rhs->as.number);
 }
 
 void TEST_ParseExpression_UnaryMinusOnNumber_NegationFlagSet(void)
@@ -58,7 +58,7 @@ void TEST_ParseExpression_UnaryMinusOnNumber_NegationFlagSet(void)
 	ExprFlags expectedFlags = EXPR_FLAG_NEGATED;
 
 	// Assert
-	TEST_ASSERT_EQUAL_INT32(expectedFlags, expr->h.flags);
+	TEST_ASSERT_EQUAL_INT32(expectedFlags, expr->flags);
 }
 
 void TEST_ParseExpression_UnaryMinusOnParenBinop_NegationFlagSet(void)
@@ -69,7 +69,7 @@ void TEST_ParseExpression_UnaryMinusOnParenBinop_NegationFlagSet(void)
 
 	// Assert
 	TEST_ASSERT_NOT_NULL(expr);
-	TEST_ASSERT_EQUAL_INT32(expectedFlags, expr->h.flags);
+	TEST_ASSERT_EQUAL_INT32(expectedFlags, expr->flags);
 }
 
 void TEST_ParseExpression_UnaryMinusOnExponent_ExponentNegated(void)
@@ -80,10 +80,10 @@ void TEST_ParseExpression_UnaryMinusOnExponent_ExponentNegated(void)
 
 	// Assert
 	TEST_ASSERT_NOT_NULL(expr);
-	TEST_ASSERT_EQUAL_INT32(EXPR_BINOP, expr->h.type);
-	TEST_ASSERT_NOT_NULL(expr->binop.v.rhs);
-	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, expr->binop.v.rhs->h.type);
-	TEST_ASSERT_EQUAL_INT32(expectedFlags, expr->binop.v.rhs->h.flags);
+	TEST_ASSERT_EQUAL_INT32(EXPR_BINOP, expr->type);
+	TEST_ASSERT_NOT_NULL(expr->as.binop.rhs);
+	TEST_ASSERT_EQUAL_INT32(EXPR_NUMBER, expr->as.binop.rhs->type);
+	TEST_ASSERT_EQUAL_INT32(expectedFlags, expr->as.binop.rhs->flags);
 }
 
 

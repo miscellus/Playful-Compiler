@@ -9,7 +9,7 @@
 
 static int RemainingChars(TokenStream *ts)
 {
-	return ts->end - ts->at;
+	return (int)(ts->end - ts->at);
 }
 
 static char PeekChar(TokenStream *ts)
