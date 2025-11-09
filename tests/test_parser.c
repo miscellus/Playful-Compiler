@@ -1,3 +1,7 @@
+#include <assert.h>
+#include <math.h>
+#include <stdbool.h>
+
 #include "unity.h"
 #include "unity_internals.h"
 #include "../src/tokenizer.h"
@@ -86,6 +90,23 @@ void TEST_ParseExpression_UnaryMinusOnExponent_ExponentNegated(void)
 	TEST_ASSERT_EQUAL_INT32(expectedFlags, expr->as.binop.rhs->flags);
 }
 
+void TEST_EvalExpr_ComplicatedExpression_Expected(void)
+{
+	// Arrange
+	char *expr_s =
+		"(3.14159^2*(6022.0-0.00000000000000000016)/(2.71828+0.57721))";
+
+	Expr *expr = ArrangeExpr(expr_s);
+
+	double expected_value = 18035.150250378;
+
+	// Act
+	double actual_value = EvalExpr(expr);
+
+	// Assert
+	TEST_ASSERT_EQUAL_DOUBLE(expected_value, actual_value);
+}
+
 
 int main(void)
 {
@@ -96,5 +117,6 @@ int main(void)
 	RUN_TEST(TEST_ParseExpression_UnaryMinusOnNumber_NegationFlagSet);
 	RUN_TEST(TEST_ParseExpression_UnaryMinusOnParenBinop_NegationFlagSet);
 	RUN_TEST(TEST_ParseExpression_UnaryMinusOnExponent_ExponentNegated);
+	RUN_TEST(TEST_EvalExpr_ComplicatedExpression_Expected);
 	return UNITY_END();
 }

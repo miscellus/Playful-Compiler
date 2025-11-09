@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 {
     NOB_GO_REBUILD_URSELF(argc, argv);
 
-    bool make_calculator = false;
+    bool make_calculator = true;
     bool run = true;
     bool make_tests = true;
 

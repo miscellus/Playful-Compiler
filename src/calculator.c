@@ -41,134 +41,6 @@ typedef struct Options_t
 
 } Options;
 
-void PrintExprInfix(Expr *expr)
-{
-	if (!expr) return;
-
-	bool negated = false;
-	if (expr->flags & EXPR_FLAG_NEGATED) negated = true;
-
-	switch (expr->type) {
-	case EXPR_NUMBER:
-		if (negated) printf("-");
-		printf("%g", expr->as.number);
-		break;
-
-	case EXPR_BINOP:
-		if (negated) printf("-");
-		printf("(");
-		PrintExprInfix(expr->as.binop.lhs);
-		printf(" %c ", expr->as.binop.op);
-		PrintExprInfix(expr->as.binop.rhs);
-		printf(")");
-		break;
-
-	case EXPR_PARSE_ERROR:
-		assert(!"TODO: print parse error");
-		break;
-	}
-}
-
-void PrintExprRPN(Expr *expr)
-{
-	bool negated = false;
-	if (expr->flags & EXPR_FLAG_NEGATED) negated = true;
-
-	switch (expr->type) {
-	case EXPR_NUMBER:
-		if (negated) printf("-");
-		printf("%g", expr->as.number);
-		break;
-
-	case EXPR_BINOP:
-		if (negated) printf("-");
-		PrintExprRPN(expr->as.binop.lhs);
-		printf(" ");
-		PrintExprRPN(expr->as.binop.rhs);
-		printf(" %c", expr->as.binop.op);
-		break;
-
-	case EXPR_PARSE_ERROR:
-		assert(!"TODO: print parse error");
-		break;
-	}
-}
-
-void PrintExprS(Expr *expr)
-{
-	bool negated = false;
-	if (expr->flags & EXPR_FLAG_NEGATED) negated = true;
-
-	switch (expr->type)
-	{
-		case EXPR_NUMBER:
-		{
-			if (negated) printf("-");
-			printf("%g", expr->as.number);
-		} break;
-
-		case EXPR_BINOP:
-		{
-			printf("(%c ", expr->as.binop.op);
-			if (negated) printf("-");
-			PrintExprS(expr->as.binop.lhs);
-			printf(" ");
-			PrintExprS(expr->as.binop.rhs);
-			printf(")");
-		} break;
-
-		case EXPR_PARSE_ERROR:
-		{
-			assert(!"TODO: print parse error");
-		} break;
-	}
-}
-
-double EvalExpr(Expr *expr)
-{
-	double result = 0;
-
-	switch (expr->type)
-	{
-		case EXPR_NUMBER:
-		{
-			result = expr->as.number;
-		} break;
-
-		case EXPR_BINOP:
-		{
-			BinNode bn = expr->as.binop;
-			double lresult = EvalExpr(bn.lhs);
-			double rresult = EvalExpr(bn.rhs);
-			switch (bn.op)
-			{
-				case '+': result = lresult + rresult; break;
-				case '-': result = lresult - rresult; break;
-				case '*': result = lresult * rresult; break;
-				case '/': result = lresult / rresult; break;
-				case '^': result = pow(lresult, rresult); break;
-				default:
-					return 42.0;
-			}
-		} break;
-
-		case EXPR_PARSE_ERROR:
-		{
-			assert(!"TODO: eval parse error");
-		} break;
-
-		default:
-			assert(0 && "Invalid code path!");
-	}
-
-	if (expr->flags & EXPR_FLAG_NEGATED)
-	{
-		result = -result;
-	}
-
-	return result;
-}
-
 static void ExitPrintUsage(const char *program, int exitCode)
 {
 #define CL_OPTION_PRINT_FORMAT(optionStr, arg0, optionNum, description) "  %-24s %s\n"
@@ -319,7 +191,7 @@ int main(int argc, char const *argv[])
 	if (options.flags & CL_OPTION_PRINT_RPN)
 	{
 		printf("Interpretation (RPN): ");
-		PrintExprRPN(parsedExpression);
+		PrintExprRpn(parsedExpression);
 		printf("\n");
 	}
 
