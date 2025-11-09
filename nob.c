@@ -113,7 +113,7 @@ int main(int argc, char **argv)
 
         if (needs_rebuild(test_tokenizer_exe, test_input_paths, ARRAY_LEN(test_input_paths)))
         {
-            log(INFO, "Rebuilding tests");
+            nob_log(INFO, "Rebuilding tests");
             append_test();
             cmd_append(cmd, SRC "tokenizer.c");
             cmd_append(cmd, TESTS "test_tokenizer.c");
@@ -129,6 +129,8 @@ int main(int argc, char **argv)
 
             if (!cmd_run(cmd)) return 1;
         }
+
+        nob_log(INFO, "Running tests");
 
         cmd_append(cmd, RUNNERS "test_tokenizer.test.exe");
         if (!cmd_run(cmd)) return 1;
