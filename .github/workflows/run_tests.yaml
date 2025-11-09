@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build
-        run: bash build.sh
+        run: gcc nob.c -o nob && ./nob
       - name: Test
-        run: bash test.sh
+        run: ./nob test
 

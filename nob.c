@@ -53,19 +53,22 @@ int main(int argc, char **argv)
 
     const char *program = shift(argv, argc);
 
-    bool build = true;
+    bool build = false;
     bool run = false;
     bool test = false;
 
     while (argc) {
         char *arg = shift(argv, argc);
 
-        if (strcmp(arg, "test") == 0) {
-            build = false;
+        if (strcmp(arg, "build") == 0) {
+            build = true;
+        }
+
+        else if (strcmp(arg, "test") == 0) {
             test = true;
         }
 
-        if (strcmp(arg, "run") == 0) {
+        else if (strcmp(arg, "run") == 0) {
             run = true;
         }
     }
@@ -88,8 +91,8 @@ int main(int argc, char **argv)
         {
             cmd_append(cmd, BUILD "calculator.exe");
             cmd_append(cmd, "-print-infix");
-            // cmd_append(cmd, "-print-rpn");
-            // cmd_append(cmd, "-print-s");
+            cmd_append(cmd, "-print-rpn");
+            cmd_append(cmd, "-print-s");
             cmd_append(cmd, "-input=(1 + 2*(3 - 4^0))/7 - 5^2");
             if (!cmd_run(cmd)) return 1;
         }
