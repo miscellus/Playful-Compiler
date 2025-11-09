@@ -3,17 +3,6 @@
 
 #include "tokenizer.h"
 
-#define ASSOC_LEFT 0
-#define ASSOC_RIGHT 1
-
-#define OP_PREC_LIST() \
-	X('+' , PREC_ADD    ,              , ASSOC_LEFT) \
-	X('-' , PREC_MINUS  , = PREC_ADD   , ASSOC_LEFT) \
-	X('*' , PREC_TIMES  ,              , ASSOC_LEFT) \
-	X('/' , PREC_DIVIDE , = PREC_TIMES , ASSOC_LEFT) \
-	X('^' , PREC_EXP    ,              , ASSOC_RIGHT) \
-	// END
-
 typedef enum
 {
 	OP_ADD = '+',
@@ -65,16 +54,12 @@ struct Expr_t
 };
 
 
-#undef X
-#define X(TOK, PREC, SAME_PREC, ASSOC) PREC SAME_PREC,
-
-typedef enum
-{
-	PREC_ROOT,
-
-	OP_PREC_LIST()
-} OpPrec;
-
 Expr *ParseExpression(TokenStream *ts, int minPrec, Token stopToken);
+
+double EvalExpr(Expr *expr);
+
+void PrintExprInfix(Expr *expr);
+void PrintExprRpn(Expr *expr);
+void PrintExprS(Expr *expr);
 
 #endif

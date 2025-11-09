@@ -20,7 +20,7 @@ CFLAGS="
 [[ ! -d $RUNNERS ]] && mkdir $RUNNERS
 
 cc $CFLAGS $SRC/tokenizer.c $TESTS/test_tokenizer.c -o $RUNNERS/test_tokenizer.test
-cc $CFLAGS $SRC/tokenizer.c $SRC/parser.c $TESTS/test_parser.c -o $RUNNERS/test_parser.test
+cc $CFLAGS $SRC/tokenizer.c $SRC/parser.c $TESTS/test_parser.c -o $RUNNERS/test_parser.test -lm
 
 $RUNNERS/test_tokenizer.test
 $RUNNERS/test_parser.test
