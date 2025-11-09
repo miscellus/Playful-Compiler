@@ -64,8 +64,8 @@ int main(int argc, char **argv)
         cmd_append(cmd, SRC "calculator.c");
         cmd_append(cmd, SRC "tokenizer.c");
         cmd_append(cmd, SRC "parser.c");
-
         cmd_cc_output(BUILD "calculator.exe");
+        cmd_append(cmd, "-lm");
 
         if (!cmd_run(cmd)) return 1;
 
