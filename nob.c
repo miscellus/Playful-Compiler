@@ -10,25 +10,41 @@ static Cmd *cmd = &cmd_;
 #define TESTS "tests/"
 #define RUNNERS TESTS "runners/"
 
-void append_cc(void)
+void cmd_cc_common(void)
 {
+#if defined(_MSC_VER) && !defined(__clang__)
     cmd_append(cmd, "cl");
-    cmd_append(cmd, "/nologo");
-    cmd_append(cmd, "/std:c11");
-    cmd_append(cmd, "/W4");
-    cmd_append(cmd, "/Od");
-    cmd_append(cmd, "/Zi");
-    cmd_append(cmd, "/D_CRT_SECURE_NO_WARNINGS");
-
+    cmd_append(cmd, "-nologo");
+    cmd_append(cmd, "-std:c11");
+    cmd_append(cmd, "-W4");
+    cmd_append(cmd, "-Od");
+    cmd_append(cmd, "-Zi");
+    cmd_append(cmd, "-D_CRT_SECURE_NO_WARNINGS");
+#else
+    cmd_append(cmd, "cc");
+    cmd_append(cmd, "-std=c11");
+    cmd_append(cmd, "-Wall");
+    cmd_append(cmd, "-Wextra");
+    cmd_append(cmd, "-O0");
+    cmd_append(cmd, "-ggdb");
+#endif
     // cmd_append(cmd, "/fsanitize=address");
 }
 
 void append_test(void)
 {
-    append_cc();
-    cmd_append(cmd, "/DUNITY_INCLUDE_DOUBLE");
+    cmd_cc_common();
+    cmd_append(cmd, "-DUNITY_INCLUDE_DOUBLE");
     cmd_append(cmd, TESTS "unity.c");
+}
 
+void cmd_cc_output(const char *output)
+{
+#if defined(_MSC_VER) && !defined(__clang__)
+    cmd_append(cmd, temp_sprintf("/Fe:%s", output));
+#else
+    cmd_append(cmd, "-o", output);
+#endif
 }
 
 int main(int argc, char **argv)
@@ -43,13 +59,13 @@ int main(int argc, char **argv)
     {
         if (!mkdir_if_not_exists(BUILD)) return 1;
 
-        append_cc();
-        cmd_append(cmd, "/I..\\src");
+        cmd_cc_common();
+        cmd_append(cmd, "-I..\\src");
         cmd_append(cmd, SRC "calculator.c");
         cmd_append(cmd, SRC "tokenizer.c");
         cmd_append(cmd, SRC "parser.c");
 
-        cmd_append(cmd, "/Fe:" BUILD "calculator.exe");
+        cmd_cc_output(BUILD "calculator.exe");
 
         if (!cmd_run(cmd)) return 1;
 
@@ -71,14 +87,14 @@ int main(int argc, char **argv)
         append_test();
         cmd_append(cmd, SRC "tokenizer.c");
         cmd_append(cmd, TESTS "test_tokenizer.c");
-        cmd_append(cmd, "/Fe:" RUNNERS "test_tokenizer.test.exe");
+        cmd_cc_output(RUNNERS "test_tokenizer.test.exe");
         if (!cmd_run(cmd)) return 1;
 
         append_test();
         cmd_append(cmd, SRC "tokenizer.c");
         cmd_append(cmd, SRC "parser.c");
         cmd_append(cmd, TESTS "test_parser.c");
-        cmd_append(cmd, "/Fe:" RUNNERS "test_parser.test.exe");
+        cmd_cc_output(RUNNERS "test_parser.test.exe");
         if (!cmd_run(cmd)) return 1;
 
         if (run)
