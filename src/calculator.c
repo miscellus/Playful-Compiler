@@ -65,6 +65,8 @@ Options ParseCommandLineOptions(int argc, char const **argv)
 
 	bool needsMoreArguments = true;
 
+	const char *inputFilePath = NULL;
+
 	for (;;)
 	{
 		if (argc < 1)
@@ -84,6 +86,7 @@ Options ParseCommandLineOptions(int argc, char const **argv)
 		} else
 		CL_OPTION_LIST(CL_OPTION_STRCMP)
 		{
+			inputFilePath = *argv;
 			break;
 		}
 
@@ -103,19 +106,18 @@ Options ParseCommandLineOptions(int argc, char const **argv)
 	{
 		return options;
 	}
-
-	if (argc < 1) ExitPrintUsage(options.program, 1);
-
-	const char *inputFile = (--argc, *argv++);
-
-	if (strcmp("-", inputFile) == 0)
+	else if (inputFilePath == NULL)
 	{
-		assert(!"TODO");
+		ExitPrintUsage(options.program, 1);
+	}
+
+	if (strcmp("-", inputFilePath) == 0)
+	{
 		options.input.file = stdin;
 	}
 	else
 	{
-		options.input.file = fopen(inputFile, "r");
+		options.input.file = fopen(inputFilePath, "r");
 		if (options.input.file == NULL)
 		{
 			fprintf(stderr, "Could not open file.\n");
