@@ -95,6 +95,8 @@ int main(int argc, char **argv)
         cmd_append(cmd, SRC "parser.c");
         cmd_append(cmd, TESTS "test_parser.c");
         cmd_cc_output(RUNNERS "test_parser.test.exe");
+        cmd_append(cmd, "-lm");
+
         if (!cmd_run(cmd)) return 1;
 
         if (run)
