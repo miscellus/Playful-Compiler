@@ -117,33 +117,44 @@ Options ParseCommandLineOptions(int argc, char const **argv)
 	}
 	else
 	{
-		options.input.file = fopen(inputFilePath, "r");
+		options.input.file = fopen(inputFilePath, "rb");
 		if (options.input.file == NULL)
 		{
-			fprintf(stderr, "Could not open file.\n");
-			ExitPrintUsage(options.program, 1);
+			fprintf(stderr, "[ERROR] Could not open file, '%.256s'.\n", inputFilePath);
+			exit(-1);
 		}
 	}
 
 	return options;
 }
 
-int ReadEntireFile(FILE *file, char **contents, long *contentsLen)
+int ReadEntireFile(FILE *file, char **contents, size_t *contentsLen)
 {
-	fseek(file, 0, SEEK_END);
-	*contentsLen = ftell(file);
-	fseek(file, 0, SEEK_SET);
+	*contents = NULL;
+	if (!file) return -1;
+	if (fseek(file, 0, SEEK_END) < 0) goto error;
+#ifndef _WIN32
+    *contentsLen = ftell(file);
+#else
+    *contentsLen = _ftelli64(file);
+#endif
+    if (*contentsLen < 0) goto error;
+    if (fseek(file, 0, SEEK_SET) < 0) goto error;
 
-	*contents = malloc((*contentsLen + 1) * sizeof(**contents));
-
+	*contents = malloc(*contentsLen + 1);
 	if (1 != fread(*contents, *contentsLen, 1, file))
 	{
-		fclose(file);
-		return -1;
+		perror("Could not read file");
+		goto error;
 	}
 
 	(*contents)[*contentsLen] = '\0';
 	return 0;
+error:
+	fprintf(stderr, "[ERROR] Could not read file: %s\n", strerror(errno));
+	if (file != stdin) fclose(file);
+	if (*contents) free(*contents);
+	return -1;
 }
 
 int main(int argc, char const *argv[])
@@ -158,10 +169,10 @@ int main(int argc, char const *argv[])
 	}
 	else
 	{
-		long inputContentsLen;
+		size_t inputContentsLen;
 		if (ReadEntireFile(options.input.file, (char **)&input, &inputContentsLen) == -1)
 		{
-			ExitPrintUsage(options.program, 1);
+			return -1;
 		}
 	}
 
