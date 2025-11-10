@@ -29,26 +29,26 @@ static void OperatorPrecedence(int op, int *lPrec, int *rPrec)
 	*rPrec = 2*p + (1 & (1 - r));
 }
 
-static Expr *ErrorExpr(const char *restrict messageFormat, int line, int column, ...)
+static Expr *ErrorExpr(int lineNumber, int characterColumn, const char *restrict messageFormat, ...)
 {
 	char messageBuffer[512];
 
 	va_list args;
-	va_start(args, column);
+	va_start(args, messageFormat);
 	int messageLen = vsnprintf(messageBuffer, sizeof(messageBuffer), messageFormat, args);
 	va_end(args);
 
 	assert(messageLen >= 0 && messageLen < (int)sizeof(messageBuffer));
 
-	char *message = malloc(messageLen+1);
+	char *message = malloc(messageLen + 1);
 	strncpy(message, messageBuffer, messageLen);
 
-	Expr *result = malloc(sizeof(*result));
+	Expr *result = calloc(1, sizeof(*result));
 	result->type = EXPR_PARSE_ERROR;
 	result->as.error = (ParseError){
-		.message = message,
-		.line = line,
-		.column = column,
+	    .message = message,
+	    .line = lineNumber,
+	    .column = characterColumn,
 	};
 	return result;
 }
@@ -58,15 +58,23 @@ Expr *ParseExpression(TokenStream *ts, int minimumPrecedence, Token stopToken)
 	bool negate = false;
 	Token token;
 
+	//
+	// Parse LValue
+	//
 restart:
  	token = NextToken(ts);
 	Expr *lhs;
 
-	if (token.type == TOK_NUMBER)
+	if (token.type == TOK_IDENT) {
+		lhs = calloc(1, sizeof(*lhs));
+		lhs->type = EXPR_VARIABLE;
+		lhs->as.variable = (VariableExpr){.ident = token.as.ident};
+	}
+	else if (token.type == TOK_NUMBER)
 	{
 		lhs = calloc(1, sizeof(*lhs));
 		lhs->type = EXPR_NUMBER;
-		lhs->as.number = token.number;
+		lhs->as.number = token.as.number;
 	}
 	else if (token.type == '(')
 	{
@@ -76,8 +84,8 @@ restart:
 		if (endParen.type != ')')
 		{
 			return ErrorExpr(
-				"Expected token ')', found: %d '%c'",
 				endParen.line, endParen.column,
+				"Expected token ')', found: %d '%c'",
 				endParen.type, endParen.type);
 		}
 	}
@@ -86,15 +94,15 @@ restart:
 		negate = !negate;
 		goto restart;
 	}
-	else if (token.type == TOK_END_OF_STREAM)
+	else if (token.type == TOK_INPUT_END)
 	{
 		return NULL;
 	}
 	else
 	{
 		return ErrorExpr(
-			"Unexpected token: %d '%c'",
 			token.line, token.column,
+			"Unexpected token: %d '%c'",
 			token.type, token.type);
 	}
 
@@ -104,6 +112,9 @@ restart:
 		lhs->flags ^= EXPR_FLAG_NEGATED;
 	}
 
+	//
+	// Parse RValue
+	//
 	for (;;)
 	{
 		TokenStream tsTemp = *ts;
@@ -114,6 +125,12 @@ restart:
 
 		switch (tokOp.type)
 		{
+		case '=': {
+			if (lhs->type != EXPR_VARIABLE) {
+				return ErrorExpr(tokOp.line, tokOp.column, "Left-hand side of operator '=' must be a variable");
+			}
+		} break;
+
 		case '+':
 		case '-':
 		case '*':
@@ -122,10 +139,18 @@ restart:
 			break;
 
 		default:
-			return ErrorExpr(
-				"Unexpected token: %d '%c'",
-				tokOp.line, tokOp.column,
-				tokOp.type, tokOp.type);
+			if (tokOp.type == TOK_IDENT) {
+				return ErrorExpr(
+				    tokOp.line, tokOp.column,
+				    "Unexpected identifier, '%.*s'",
+				    tokOp.as.ident.len, tokOp.as.ident.chars);
+			}
+			else {
+				return ErrorExpr(
+					tokOp.line, tokOp.column,
+					"Unexpected token: %d '%c'",
+					tokOp.type, tokOp.type);
+			}
 		}
 
 		int lPrec, rPrec;
@@ -142,9 +167,9 @@ restart:
 		if (rhs == NULL)
 		{
 			return ErrorExpr(
-				"Unexpected end of stream",
 				ts->lineCount, GetColumn(ts),
-				tokOp.type, tokOp.type);
+				"Operator '%c' missing right hand operand",
+				tokOp.type);
 		}
 		else if (rhs->type == EXPR_PARSE_ERROR)
 		{

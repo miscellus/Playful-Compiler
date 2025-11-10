@@ -13,7 +13,7 @@ void tearDown(){}
 static Expr *ArrangeExpr(const char *cstr)
 {
 	TokenStream ts = TokenStreamFromCStr(cstr);
-	return ParseExpression(&ts, 0, (Token){TOK_END_OF_STREAM});
+	return ParseExpression(&ts, 0, (Token){TOK_INPUT_END});
 }
 
 void TEST_ParseExpression_EmptyInput_Null(void)

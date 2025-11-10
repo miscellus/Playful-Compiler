@@ -23,6 +23,8 @@ static char PeekChar(TokenStream *ts)
 
 static char Advance(TokenStream *ts)
 {
+	assert(ts->at < ts->end);
+
 	char c = *ts->at++;
 
 	if (c == '\n')
@@ -51,41 +53,69 @@ TokenStream TokenStreamFromCStr(const char *str)
 	return (TokenStream){str, str + strlen(str), str, 0};
 }
 
-Token NextToken(TokenStream *ts)
+static void
+NumberToken(TokenStream *ts, Token *outToken)
+{
+	char buf[128] = {0};
+	const char *tokStart = ts->at;
+
+	// TODO(jkk): only one radix point please.
+	char c;
+	while ((c = PeekChar(ts)) && isdigit(c) || c == '.') {
+		Advance(ts);
+	}
+
+	unsigned long copyLength = (unsigned long)(ts->at - tokStart) & (sizeof(buf) - 1);
+	memcpy(buf, tokStart, copyLength);
+	buf[copyLength] = '\0';
+
+	outToken->type = TOK_NUMBER;
+	outToken->as.number = strtod(buf, NULL);
+}
+
+static void
+IdentToken(TokenStream *ts, Token *outToken)
+{
+	const char *tokStart = ts->at;
+
+	char c;
+	do {
+		c = Advance(ts);
+	} while (isalnum(c) || c == '_');
+
+	Ident ident = {0};
+	ident.len = (unsigned long)(ts->at - tokStart);
+	ident.chars = calloc(ident.len + 1, sizeof(*ident.chars));
+	memcpy(ident.chars, tokStart, ident.len);
+
+	outToken->type = TOK_IDENT;
+	outToken->as.ident = ident;
+}
+
+Token
+NextToken(TokenStream *ts)
 {
 	EatSpace(ts);
 
-	Token result = {0};
-	result.line = ts->lineCount;
-	result.column = GetColumn(ts);
+	Token token = {0};
+	token.line = ts->lineCount;
+	token.column = GetColumn(ts);
 
-	if (RemainingChars(ts) <= 0)
-	{
-		result.type = TOK_END_OF_STREAM;
-		return result;
+	char c = PeekChar(ts);
+
+	if (isdigit(c)) {
+		NumberToken(ts, &token);
+	}
+	else if (isalpha(c)) {
+		IdentToken(ts, &token);
+	}
+	else if (c == '\0') {
+		token.type = TOK_INPUT_END;
+	}
+	else {
+		token.type = c;
+		Advance(ts);
 	}
 
-	const char *tokStart = ts->at;
-
-	if (isdigit(PeekChar(ts)))
-	{
-		char buf[64] = {0};
-		char c;
-		while((c = PeekChar(ts), isdigit(c) || c == '.'))
-		{
-			Advance(ts);
-		}
-
-		unsigned long copyLength = (unsigned long)(ts->at - tokStart) & 63;
-		memcpy(buf, tokStart, copyLength);
-		buf[copyLength] = '\0';
-		result.type = TOK_NUMBER;
-		result.number = strtod(buf, NULL);
-	}
-	else
-	{
-		result.type = Advance(ts);
-	}
-
-	return result;
+	return token;
 }
