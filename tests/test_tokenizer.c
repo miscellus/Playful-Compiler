@@ -32,7 +32,7 @@ void TEST_NextToken_EmptyInput_EmptyOutput(void)
 	Token token = NextToken(&ts);
 
 	// Assert
-	TEST_ASSERT_EQUAL_INT32(TOK_END_OF_STREAM, token.type);
+	TEST_ASSERT_EQUAL_INT32(TOK_INPUT_END, token.type);
 }
 
 void TEST_NextToken_NumberInInput_MatchingNumberToken(void)
@@ -45,7 +45,7 @@ void TEST_NextToken_NumberInInput_MatchingNumberToken(void)
 
 	// Assert
 	TEST_ASSERT_EQUAL_INT32(TOK_NUMBER, token.type);
-	TEST_ASSERT_EQUAL_DOUBLE(42, token.number);
+	TEST_ASSERT_EQUAL_DOUBLE(42, token.as.number);
 }
 
 

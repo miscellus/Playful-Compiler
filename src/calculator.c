@@ -178,7 +178,7 @@ int main(int argc, char const *argv[])
 
 	TokenStream ts = TokenStreamFromCStr(input);
 
-	Expr *parsedExpression = ParseExpression(&ts, 0, (Token){TOK_END_OF_STREAM});
+	Expr *parsedExpression = ParseExpression(&ts, 0, (Token){TOK_INPUT_END});
 
 	if (parsedExpression && parsedExpression->type == EXPR_PARSE_ERROR)
 	{

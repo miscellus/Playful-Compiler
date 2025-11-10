@@ -28,11 +28,16 @@ typedef struct ParseError_t
 	int column;
 } ParseError;
 
+typedef struct VariableExpr {
+	Ident ident;
+} VariableExpr;
+
 typedef enum
 {
 	EXPR_NUMBER,
 	EXPR_BINOP,
 	EXPR_PARSE_ERROR,
+	EXPR_VARIABLE,
 } ExprType;
 
 typedef enum
@@ -50,6 +55,7 @@ struct Expr_t
 		double number;
 		BinNode binop;
 		ParseError error;
+		VariableExpr variable;
 	} as;
 };
 

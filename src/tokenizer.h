@@ -1,18 +1,36 @@
 #ifndef TOKENIZER_H
 #define TOKENIZER_H
 
+#include <stddef.h>
+
 typedef enum TokenType_t
 {
-	TOK_END_OF_STREAM = 0,
-	TOK_NUMBER = 256
+	TOK_INPUT_END = 0,
+	TOK_EQUALS = '=',
+	TOK_PLUS = '+',
+	TOK_MINUS = '-',
+	TOK_ASTERISK = '*',
+	TOK_SLASH = '/',
+	TOK_HAT = '^',
+	TOK_NUMBER = 256,
+	TOK_IDENT,
 } TokenType;
+
+typedef struct Ident_t
+{
+	char *chars;
+	size_t len;
+} Ident;
 
 typedef struct Token_t
 {
 	int type;
 	int line;
 	int column;
-	double number;
+	union {
+		double number;
+		Ident ident;
+	} as;
 } Token;
 
 typedef struct TokenStream_t
