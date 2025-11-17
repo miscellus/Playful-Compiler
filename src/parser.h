@@ -1,24 +1,23 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include <stdint.h>
 #include "tokenizer.h"
 
-typedef enum
+enum
 {
 	OP_ADD = '+',
 	OP_MINUS = '-',
 	OP_MULTIPLY = '*',
 	OP_DIVIDE = '/',
 	OP_EXP = '^',
-} Operator;
-
-typedef struct Expr_t Expr;
+};
 
 typedef struct BinNode_t
 {
-	Operator op;
-	Expr *lhs;
-	Expr *rhs;
+	int op;
+	struct Expr_t *lhs;
+	struct Expr_t *rhs;
 } BinNode;
 
 typedef struct ParseError_t
@@ -45,10 +44,11 @@ typedef enum
 	EXPR_FLAG_NEGATED = (1 << 0),
 } ExprFlags;
 
-struct Expr_t
+typedef struct Expr_t
 {
 	ExprType type;
 	ExprFlags flags;
+	struct Expr_t *next;
 
 	union
 	{
@@ -57,10 +57,9 @@ struct Expr_t
 		ParseError error;
 		VariableExpr variable;
 	} as;
-};
+} Expr;
 
-
-Expr *ParseExpression(TokenStream *ts, int minPrec, Token stopToken);
+Expr *ParseExpression(TokenStream *ts, int minPrec, TokenType stopToken);
 
 double EvalExpr(Expr *expr);
 

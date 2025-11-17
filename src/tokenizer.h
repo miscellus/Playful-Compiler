@@ -12,6 +12,7 @@ typedef enum TokenType_t
 	TOK_ASTERISK = '*',
 	TOK_SLASH = '/',
 	TOK_HAT = '^',
+	TOK_SEMICOLON = ';',
 	TOK_NUMBER = 256,
 	TOK_IDENT,
 } TokenType;

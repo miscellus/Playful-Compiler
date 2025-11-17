@@ -13,7 +13,7 @@ void tearDown(){}
 static Expr *ArrangeExpr(const char *cstr)
 {
 	TokenStream ts = TokenStreamFromCStr(cstr);
-	return ParseExpression(&ts, 0, (Token){TOK_INPUT_END});
+	return ParseExpression(&ts, 0, TOK_INPUT_END);
 }
 
 void TEST_ParseExpression_EmptyInput_Null(void)
@@ -107,10 +107,32 @@ void TEST_EvalExpr_ComplicatedExpression_Expected(void)
 	TEST_ASSERT_EQUAL_DOUBLE(expected_value, actual_value);
 }
 
+void TEST_EvalExpr_VariableAssignments_Expected(void)
+{
+	// Arrange
+	char *expr_s =
+		"a = 2;\n"
+		"b = a ^ 3 + 5;\n"
+		"c = (b - 3) / a;\n"
+		"d = c ^ (a + 1);\n"
+		"d + 7\n";
+
+	Expr *expr = ArrangeExpr(expr_s);
+
+	double expected_value = 132.0;
+
+	// Act
+	double actual_value = EvalExpr(expr);
+
+	// Assert
+	TEST_ASSERT_EQUAL_DOUBLE(expected_value, actual_value);
+}
+
 
 int main(void)
 {
 	UNITY_BEGIN();
+	RUN_TEST(TEST_EvalExpr_VariableAssignments_Expected);
 	RUN_TEST(TEST_ParseExpression_EmptyInput_Null);
 	RUN_TEST(TEST_ParseExpression_NumberWithSpaces_SingleNumberExpression);
 	RUN_TEST(TEST_ParseExpression_SingleAdditionBinop_1Lhs2Rhs);

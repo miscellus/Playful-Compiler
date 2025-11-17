@@ -16,11 +16,13 @@ static void OperatorPrecedence(int op, int *lPrec, int *rPrec)
 
 	switch (op)
 	{
-		case '+': p = 0x100; break;
-		case '-': p = 0x100; break;
-		case '*': p = 0x200; break;
-		case '/': p = 0x200; break;
-		case '^': p = 0x300; r = 1; break;
+		case ';': p = 0x080; break;
+		case '=': p = 0x100; r = 1; break;
+		case '+': p = 0x200; break;
+		case '-': p = 0x200; break;
+		case '*': p = 0x300; break;
+		case '/': p = 0x300; break;
+		case '^': p = 0x400; r = 1; break;
 		default:
 			assert(0 && "Invalid code path!");
 	}
@@ -46,24 +48,24 @@ static Expr *ErrorExpr(int lineNumber, int characterColumn, const char *restrict
 	Expr *result = calloc(1, sizeof(*result));
 	result->type = EXPR_PARSE_ERROR;
 	result->as.error = (ParseError){
-	    .message = message,
-	    .line = lineNumber,
-	    .column = characterColumn,
+		.message = message,
+		.line = lineNumber,
+		.column = characterColumn,
 	};
 	return result;
 }
 
-Expr *ParseExpression(TokenStream *ts, int minimumPrecedence, Token stopToken)
+Expr *ParseExpression(TokenStream *ts, int minimumPrecedence, TokenType stopToken)
 {
 	bool negate = false;
-	Token token;
+	Token token = {0};
 
 	//
 	// Parse LValue
 	//
 restart:
- 	token = NextToken(ts);
-	Expr *lhs;
+	token = NextToken(ts);
+	Expr *lhs = NULL;
 
 	if (token.type == TOK_IDENT) {
 		lhs = calloc(1, sizeof(*lhs));
@@ -78,7 +80,7 @@ restart:
 	}
 	else if (token.type == '(')
 	{
-		lhs = ParseExpression(ts, 0, (Token){.type = ')'});
+		lhs = ParseExpression(ts, 0, ')');
 
 		Token endParen = NextToken(ts);
 		if (endParen.type != ')')
@@ -120,9 +122,6 @@ restart:
 		TokenStream tsTemp = *ts;
 		Token tokOp = NextToken(&tsTemp);
 
-		if (tokOp.type == stopToken.type)
-			return lhs;
-
 		switch (tokOp.type)
 		{
 		case '=': {
@@ -131,6 +130,7 @@ restart:
 			}
 		} break;
 
+		case ';':
 		case '+':
 		case '-':
 		case '*':
@@ -138,19 +138,22 @@ restart:
 		case '^':
 			break;
 
+#if 0
+		case TOK_IDENT:
+			return ErrorExpr(
+				tokOp.line, tokOp.column,
+				"Unexpected identifier, '%.*s'",
+				tokOp.as.ident.len, tokOp.as.ident.chars);
+#endif
+
 		default:
-			if (tokOp.type == TOK_IDENT) {
-				return ErrorExpr(
-				    tokOp.line, tokOp.column,
-				    "Unexpected identifier, '%.*s'",
-				    tokOp.as.ident.len, tokOp.as.ident.chars);
-			}
-			else {
-				return ErrorExpr(
-					tokOp.line, tokOp.column,
-					"Unexpected token: %d '%c'",
-					tokOp.type, tokOp.type);
-			}
+			return lhs;
+			// else {
+			// 	return ErrorExpr(
+			// 		tokOp.line, tokOp.column,
+			// 		"Unexpected token: %d '%c'",
+			// 		tokOp.type, tokOp.type);
+			// }
 		}
 
 		int lPrec, rPrec;
@@ -162,6 +165,13 @@ restart:
 		}
 
 		ts->at = tsTemp.at;
+
+		if (tokOp.type == ';')
+		{
+			lhs->next = ParseExpression(ts, minimumPrecedence, stopToken);
+			return lhs;
+		}
+
 		Expr *rhs = ParseExpression(ts, rPrec, stopToken);
 
 		if (rhs == NULL)
@@ -191,6 +201,8 @@ restart:
 	return lhs;
 }
 
+static double variables[256];
+
 double EvalExpr(Expr *expr)
 {
 	double result = 0;
@@ -202,11 +214,26 @@ double EvalExpr(Expr *expr)
 			result = expr->as.number;
 		} break;
 
+		case  EXPR_VARIABLE:
+		{
+			result = variables[expr->as.variable.ident.chars[0]];
+		} break;
+
 		case EXPR_BINOP:
 		{
 			BinNode bn = expr->as.binop;
-			double lresult = EvalExpr(bn.lhs);
+
 			double rresult = EvalExpr(bn.rhs);
+
+			if (bn.op == '=')
+			{
+				assert(bn.lhs->type == EXPR_VARIABLE || !"Left-hand of assignment must be variable");
+				result = variables[bn.lhs->as.variable.ident.chars[0]] = rresult;
+				break;
+			}
+
+			double lresult = EvalExpr(bn.lhs);
+
 			switch (bn.op)
 			{
 				case '+': result = lresult + rresult; break;
@@ -215,7 +242,7 @@ double EvalExpr(Expr *expr)
 				case '/': result = lresult / rresult; break;
 				case '^': result = pow(lresult, rresult); break;
 				default:
-					return 42.0;
+					assert(!"TODO: unsupported operator");
 			}
 		} break;
 
@@ -231,6 +258,11 @@ double EvalExpr(Expr *expr)
 	if (expr->flags & EXPR_FLAG_NEGATED)
 	{
 		result = -result;
+	}
+
+	if (expr->next)
+	{
+		return EvalExpr(expr->next);
 	}
 
 	return result;
