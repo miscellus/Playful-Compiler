@@ -138,22 +138,8 @@ restart:
 		case '^':
 			break;
 
-#if 0
-		case TOK_IDENT:
-			return ErrorExpr(
-				tokOp.line, tokOp.column,
-				"Unexpected identifier, '%.*s'",
-				tokOp.as.ident.len, tokOp.as.ident.chars);
-#endif
-
 		default:
 			return lhs;
-			// else {
-			// 	return ErrorExpr(
-			// 		tokOp.line, tokOp.column,
-			// 		"Unexpected token: %d '%c'",
-			// 		tokOp.type, tokOp.type);
-			// }
 		}
 
 		int lPrec, rPrec;
@@ -268,7 +254,7 @@ double EvalExpr(Expr *expr)
 	return result;
 }
 
-void PrintExprInfix(Expr *expr)
+void PrintExprInfix_old(Expr *expr)
 {
 	if (!expr) return;
 
@@ -284,9 +270,9 @@ void PrintExprInfix(Expr *expr)
 	case EXPR_BINOP:
 		if (negated) printf("-");
 		printf("(");
-		PrintExprInfix(expr->as.binop.lhs);
+		PrintExprInfix_old(expr->as.binop.lhs);
 		printf(" %c ", expr->as.binop.op);
-		PrintExprInfix(expr->as.binop.rhs);
+		PrintExprInfix_old(expr->as.binop.rhs);
 		printf(")");
 		break;
 
@@ -348,5 +334,49 @@ void PrintExprS(Expr *expr)
 		{
 			assert(!"TODO: print parse error");
 		} break;
+	}
+}
+
+void PrintExprInfix(Expr *expr)
+{
+	if (!expr) return;
+
+	bool negated = false;
+	if (expr->flags & EXPR_FLAG_NEGATED) negated = true;
+
+	switch (expr->type) {
+	case EXPR_NUMBER:
+		if (negated) printf("-");
+		printf("%g", expr->as.number);
+		break;
+
+	case EXPR_VARIABLE:
+		if (negated) printf("-");
+		printf("%.*s", (int)expr->as.variable.ident.len, expr->as.variable.ident.chars);
+		break;
+
+	case EXPR_BINOP:
+		if (negated) printf("-");
+		printf("(");
+		PrintExprInfix(expr->as.binop.lhs);
+		printf(" %c ", expr->as.binop.op);
+		PrintExprInfix(expr->as.binop.rhs);
+		printf(")");
+		break;
+
+	case EXPR_PARSE_ERROR:
+		if (negated) printf("-");
+		printf("<parse error: %s at %d:%d>", expr->as.error.message, expr->as.error.line, expr->as.error.column);
+		break;
+
+	default:
+		assert(0 && "Invalid expr type");
+	}
+
+	if (expr->next)
+	{
+		/* For a chain like A ; B ; C print "A ; B ; C" */
+		printf(" ; ");
+		PrintExprInfix(expr->next);
 	}
 }

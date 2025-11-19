@@ -13,7 +13,10 @@ void tearDown(){}
 static Expr *ArrangeExpr(const char *cstr)
 {
 	TokenStream ts = TokenStreamFromCStr(cstr);
-	return ParseExpression(&ts, 0, TOK_INPUT_END);
+	Expr *result = ParseExpression(&ts, 0, TOK_INPUT_END);
+	PrintExprInfix(result);
+	printf("\n");
+	return result;
 }
 
 void TEST_ParseExpression_EmptyInput_Null(void)
@@ -128,11 +131,35 @@ void TEST_EvalExpr_VariableAssignments_Expected(void)
 	TEST_ASSERT_EQUAL_DOUBLE(expected_value, actual_value);
 }
 
+void TEST_ExpressionSequence_Works(void)
+{
+	// Arrange
+	Expr* expr = ArrangeExpr("a = 1; b = a * 3; a = b - a; b");
+	double expected_value = 3.0;
+
+	// Act
+	double actual_value = EvalExpr(expr);
+
+	// Assert
+	TEST_ASSERT_EQUAL_DOUBLE(expected_value, actual_value);
+}
+
+void TEST_nocheckin(void)
+{
+	// Arrange
+	Expr* expr = ArrangeExpr("a = 1; b = a * 3; a = b - a; b");
+	double expected_value = 3.0;
+
+	// Act
+	double actual_value = EvalExpr(expr);
+
+	// Assert
+	TEST_ASSERT_EQUAL_DOUBLE(expected_value, actual_value);
+}
 
 int main(void)
 {
 	UNITY_BEGIN();
-	RUN_TEST(TEST_EvalExpr_VariableAssignments_Expected);
 	RUN_TEST(TEST_ParseExpression_EmptyInput_Null);
 	RUN_TEST(TEST_ParseExpression_NumberWithSpaces_SingleNumberExpression);
 	RUN_TEST(TEST_ParseExpression_SingleAdditionBinop_1Lhs2Rhs);
@@ -140,5 +167,7 @@ int main(void)
 	RUN_TEST(TEST_ParseExpression_UnaryMinusOnParenBinop_NegationFlagSet);
 	RUN_TEST(TEST_ParseExpression_UnaryMinusOnExponent_ExponentNegated);
 	RUN_TEST(TEST_EvalExpr_ComplicatedExpression_Expected);
+	RUN_TEST(TEST_EvalExpr_VariableAssignments_Expected);
+	RUN_TEST(TEST_ExpressionSequence_Works);
 	return UNITY_END();
 }

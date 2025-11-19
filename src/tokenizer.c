@@ -14,16 +14,15 @@ static int RemainingChars(TokenStream *ts)
 
 static char PeekChar(TokenStream *ts)
 {
-	if (RemainingChars(ts) > 0)
-	{
-		return *ts->at;
-	}
-	return 0;
+	if (RemainingChars(ts) <= 0)
+		return 0;
+	return *ts->at;
 }
 
 static char Advance(TokenStream *ts)
 {
-	assert(ts->at < ts->end);
+	if (RemainingChars(ts) <= 0)
+		return 0;
 
 	char c = *ts->at++;
 
@@ -77,11 +76,15 @@ static void
 IdentToken(TokenStream *ts, Token *outToken)
 {
 	const char *tokStart = ts->at;
+	char c = PeekChar(ts);
 
-	char c;
-	do {
-		c = Advance(ts);
-	} while (isalnum(c) || c == '_');
+	if (isalnum(c) || c == '_')
+	{
+		do
+		{
+			Advance(ts);
+		} while (isalnum(c = PeekChar(ts)) || c == '_' || isdigit(c));
+	}
 
 	Ident ident = {0};
 	ident.len = (unsigned long)(ts->at - tokStart);
