@@ -16,11 +16,13 @@ static void OperatorPrecedence(int op, int *lPrec, int *rPrec)
 
 	switch (op)
 	{
-		case '+': p = 0x100; break;
-		case '-': p = 0x100; break;
-		case '*': p = 0x200; break;
-		case '/': p = 0x200; break;
-		case '^': p = 0x300; r = 1; break;
+		case ';': p = 0x080; break;
+		case '=': p = 0x100; r = 1; break;
+		case '+': p = 0x200; break;
+		case '-': p = 0x200; break;
+		case '*': p = 0x300; break;
+		case '/': p = 0x300; break;
+		case '^': p = 0x400; r = 1; break;
 		default:
 			assert(0 && "Invalid code path!");
 	}
@@ -40,45 +42,90 @@ static Expr *ErrorExpr(int lineNumber, int characterColumn, const char *restrict
 
 	assert(messageLen >= 0 && messageLen < (int)sizeof(messageBuffer));
 
-	char *message = malloc(messageLen + 1);
+	char *message = calloc(messageLen + 1, sizeof(*message));
 	strncpy(message, messageBuffer, messageLen);
 
 	Expr *result = calloc(1, sizeof(*result));
 	result->type = EXPR_PARSE_ERROR;
 	result->as.error = (ParseError){
-	    .message = message,
-	    .line = lineNumber,
-	    .column = characterColumn,
+		.message = message,
+		.line = lineNumber,
+		.column = characterColumn,
 	};
 	return result;
 }
 
-Expr *ParseExpression(TokenStream *ts, int minimumPrecedence, Token stopToken)
+Expr *ParseExprSeq(TokenStream *ts)
+{
+	int prec;
+	int ignore;
+	OperatorPrecedence(';', &prec, &ignore);
+
+	ExprSeq head = {0};
+	ExprSeq *seq = &head;
+
+	for (;;) {
+		seq->expr = ParseExpr(ts, prec, TOK_INPUT_END);
+		if (seq->expr == NULL) break;
+
+		TokenStream rewindPoint = *ts;
+		Token tok = NextToken(ts);
+		if (tok.type != ';')
+		{
+			*ts = rewindPoint;
+			break;
+		}
+
+		seq = seq->next = calloc(1, sizeof(*seq));
+	}
+
+	Expr *expr = head.expr;
+
+	if (head.next)
+	{
+		expr = calloc(1, sizeof(*expr));
+		expr->type = EXPR_SEQUENCE;
+		expr->as.seq = head;
+	}
+
+	return expr;
+}
+
+Expr *ParseExpr(TokenStream *ts, int minimumPrecedence, TokenType stopToken)
 {
 	bool negate = false;
-	Token token;
+	Token token = {0};
 
 	//
 	// Parse LValue
 	//
 restart:
- 	token = NextToken(ts);
-	Expr *lhs;
+	token = NextToken(ts);
+	Expr *lhs = NULL;
 
-	if (token.type == TOK_IDENT) {
+	switch (token.type)
+	{
+
+	// Unary minus
+	case '-':
+		negate = !negate;
+		goto restart;
+
+	case TOK_IDENT:
 		lhs = calloc(1, sizeof(*lhs));
 		lhs->type = EXPR_VARIABLE;
 		lhs->as.variable = (VariableExpr){.ident = token.as.ident};
-	}
-	else if (token.type == TOK_NUMBER)
-	{
+	break;
+
+	case TOK_NUMBER:
 		lhs = calloc(1, sizeof(*lhs));
 		lhs->type = EXPR_NUMBER;
 		lhs->as.number = token.as.number;
-	}
-	else if (token.type == '(')
+	break;
+
+	case '(':
 	{
-		lhs = ParseExpression(ts, 0, (Token){.type = ')'});
+		lhs = ParseExprSeq(ts);
 
 		Token endParen = NextToken(ts);
 		if (endParen.type != ')')
@@ -89,21 +136,12 @@ restart:
 				endParen.type, endParen.type);
 		}
 	}
-	else if (token.type == '-') // Unary minus
-	{
-		negate = !negate;
-		goto restart;
-	}
-	else if (token.type == TOK_INPUT_END)
-	{
+	break;
+
+	case TOK_INPUT_END:
+	default:
 		return NULL;
-	}
-	else
-	{
-		return ErrorExpr(
-			token.line, token.column,
-			"Unexpected token: %d '%c'",
-			token.type, token.type);
+
 	}
 
 	if (negate)
@@ -119,9 +157,6 @@ restart:
 	{
 		TokenStream tsTemp = *ts;
 		Token tokOp = NextToken(&tsTemp);
-
-		if (tokOp.type == stopToken.type)
-			return lhs;
 
 		switch (tokOp.type)
 		{
@@ -139,18 +174,7 @@ restart:
 			break;
 
 		default:
-			if (tokOp.type == TOK_IDENT) {
-				return ErrorExpr(
-				    tokOp.line, tokOp.column,
-				    "Unexpected identifier, '%.*s'",
-				    tokOp.as.ident.len, tokOp.as.ident.chars);
-			}
-			else {
-				return ErrorExpr(
-					tokOp.line, tokOp.column,
-					"Unexpected token: %d '%c'",
-					tokOp.type, tokOp.type);
-			}
+			return lhs;
 		}
 
 		int lPrec, rPrec;
@@ -162,7 +186,8 @@ restart:
 		}
 
 		ts->at = tsTemp.at;
-		Expr *rhs = ParseExpression(ts, rPrec, stopToken);
+
+		Expr *rhs = ParseExpr(ts, rPrec, stopToken);
 
 		if (rhs == NULL)
 		{
@@ -191,6 +216,8 @@ restart:
 	return lhs;
 }
 
+static double variables[256];
+
 double EvalExpr(Expr *expr)
 {
 	double result = 0;
@@ -202,11 +229,26 @@ double EvalExpr(Expr *expr)
 			result = expr->as.number;
 		} break;
 
+		case  EXPR_VARIABLE:
+		{
+			result = variables[expr->as.variable.ident.chars[0]];
+		} break;
+
 		case EXPR_BINOP:
 		{
 			BinNode bn = expr->as.binop;
-			double lresult = EvalExpr(bn.lhs);
+
 			double rresult = EvalExpr(bn.rhs);
+
+			if (bn.op == '=')
+			{
+				assert(bn.lhs->type == EXPR_VARIABLE || !"Left-hand of assignment must be variable");
+				result = variables[bn.lhs->as.variable.ident.chars[0]] = rresult;
+				break;
+			}
+
+			double lresult = EvalExpr(bn.lhs);
+
 			switch (bn.op)
 			{
 				case '+': result = lresult + rresult; break;
@@ -215,7 +257,17 @@ double EvalExpr(Expr *expr)
 				case '/': result = lresult / rresult; break;
 				case '^': result = pow(lresult, rresult); break;
 				default:
-					return 42.0;
+					assert(!"TODO: unsupported operator");
+			}
+		} break;
+
+		case EXPR_SEQUENCE:
+		{
+			ExprSeq *seq = &expr->as.seq;
+			while (seq)
+			{
+				result = EvalExpr(seq->expr);
+				seq = seq->next;
 			}
 		} break;
 
@@ -236,7 +288,7 @@ double EvalExpr(Expr *expr)
 	return result;
 }
 
-void PrintExprInfix(Expr *expr)
+void PrintExpr(Expr *expr)
 {
 	if (!expr) return;
 
@@ -249,72 +301,104 @@ void PrintExprInfix(Expr *expr)
 		printf("%g", expr->as.number);
 		break;
 
+	case EXPR_VARIABLE:
+		if (negated) printf("-");
+		printf("%.*s", (int)expr->as.variable.ident.len, expr->as.variable.ident.chars);
+		break;
+
 	case EXPR_BINOP:
 		if (negated) printf("-");
 		printf("(");
-		PrintExprInfix(expr->as.binop.lhs);
+		PrintExpr(expr->as.binop.lhs);
 		printf(" %c ", expr->as.binop.op);
-		PrintExprInfix(expr->as.binop.rhs);
+		PrintExpr(expr->as.binop.rhs);
 		printf(")");
 		break;
 
+
+	case EXPR_SEQUENCE:
+	{
+		ExprSeq *seq = &expr->as.seq;
+		for (;;)
+		{
+			PrintExpr(seq->expr);
+			seq = seq->next;
+			if (!seq) break;
+			printf(" ; ");
+		}
+	} break;
+
 	case EXPR_PARSE_ERROR:
-		assert(!"TODO: print parse error");
+		if (negated) printf("-");
+		printf("<parse error: %s at %d:%d>", expr->as.error.message, expr->as.error.line, expr->as.error.column);
 		break;
+
+	default:
+		assert(0 && "Invalid expr type");
 	}
 }
 
-void PrintExprRpn(Expr *expr)
+
+static void PrintIndent(int indent)
 {
-	bool negated = false;
-	if (expr->flags & EXPR_FLAG_NEGATED) negated = true;
+	for (int i = indent; i > 0 ; --i) putchar('\t');
+}
+
+static void PrintExprS_(const Expr *expr, int level)
+{
+	if (!expr) { PrintIndent(level); puts("()"); return; }
+
+	bool neg = (expr->flags & EXPR_FLAG_NEGATED) != 0;
 
 	switch (expr->type) {
 	case EXPR_NUMBER:
-		if (negated) printf("-");
-		printf("%g", expr->as.number);
-		break;
+		PrintIndent(level);
+		if (neg) putchar('-');
+		printf("%g\n", expr->as.number);
+		return;
+
+	case EXPR_VARIABLE:
+		PrintIndent(level);
+		if (neg) putchar('-');
+		printf("%.*s\n", (int)expr->as.variable.ident.len, expr->as.variable.ident.chars);
+		return;
 
 	case EXPR_BINOP:
-		if (negated) printf("-");
-		PrintExprRpn(expr->as.binop.lhs);
-		printf(" ");
-		PrintExprRpn(expr->as.binop.rhs);
-		printf(" %c", expr->as.binop.op);
-		break;
+		PrintIndent(level);
+		if (neg) putchar('-');
+		printf("(%c\n", (char)expr->as.binop.op);
+		PrintExprS_(expr->as.binop.lhs, level + 1);
+		PrintExprS_(expr->as.binop.rhs, level + 1);
+		PrintIndent(level);
+		puts(")");
+		return;
+
+	case EXPR_SEQUENCE:
+	{
+		PrintIndent(level);
+		puts("(seq");
+		const ExprSeq *s = &expr->as.seq;
+		while (s) {
+			PrintExprS_(s->expr, level + 1);
+			s = s->next;
+		}
+		PrintIndent(level);
+		puts(")");
+		return;
+	}
 
 	case EXPR_PARSE_ERROR:
-		assert(!"TODO: print parse error");
-		break;
+		PrintIndent(level);
+		if (neg) putchar('-');
+		printf("<parse error: %s at %d:%d>\n", expr->as.error.message, expr->as.error.line, expr->as.error.column);
+		return;
+
+	default:
+		assert(0 && "Invalid expr type");
 	}
 }
 
 void PrintExprS(Expr *expr)
 {
-	bool negated = false;
-	if (expr->flags & EXPR_FLAG_NEGATED) negated = true;
-
-	switch (expr->type)
-	{
-		case EXPR_NUMBER:
-		{
-			if (negated) printf("-");
-			printf("%g", expr->as.number);
-		} break;
-
-		case EXPR_BINOP:
-		{
-			printf("(%c ", expr->as.binop.op);
-			if (negated) printf("-");
-			PrintExprS(expr->as.binop.lhs);
-			printf(" ");
-			PrintExprS(expr->as.binop.rhs);
-			printf(")");
-		} break;
-
-		case EXPR_PARSE_ERROR:
-		{
-			assert(!"TODO: print parse error");
-		} break;
-	}
+	PrintExprS_(expr, 0);
 }

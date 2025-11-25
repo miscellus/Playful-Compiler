@@ -13,7 +13,8 @@ void tearDown(){}
 static Expr *ArrangeExpr(const char *cstr)
 {
 	TokenStream ts = TokenStreamFromCStr(cstr);
-	return ParseExpression(&ts, 0, (Token){TOK_INPUT_END});
+	Expr *result = ParseExprSeq(&ts);
+	return result;
 }
 
 void TEST_ParseExpression_EmptyInput_Null(void)
@@ -107,6 +108,52 @@ void TEST_EvalExpr_ComplicatedExpression_Expected(void)
 	TEST_ASSERT_EQUAL_DOUBLE(expected_value, actual_value);
 }
 
+void TEST_EvalExpr_VariableAssignments_Expected(void)
+{
+	// Arrange
+	char *expr_s =
+		"a = 2;\n"
+		"b = a ^ 3 + 5;\n"
+		"c = (b - 3) / a;\n"
+		"d = c ^ (a + 1);\n"
+		"d + 7\n";
+
+	Expr *expr = ArrangeExpr(expr_s);
+
+	double expected_value = 132.0;
+
+	// Act
+	double actual_value = EvalExpr(expr);
+
+	// Assert
+	TEST_ASSERT_EQUAL_DOUBLE(expected_value, actual_value);
+}
+
+void TEST_ExpressionSequence_Works(void)
+{
+	// Arrange
+	Expr* expr = ArrangeExpr("a = 1; b = a * 3; a = b - a; b");
+	double expected_value = 3.0;
+
+	// Act
+	double actual_value = EvalExpr(expr);
+
+	// Assert
+	TEST_ASSERT_EQUAL_DOUBLE(expected_value, actual_value);
+}
+
+void TEST_nocheckin(void)
+{
+	// Arrange
+	Expr* expr = ArrangeExpr("a = 1; b = a * 3; a = b - a; b");
+	double expected_value = 3.0;
+
+	// Act
+	double actual_value = EvalExpr(expr);
+
+	// Assert
+	TEST_ASSERT_EQUAL_DOUBLE(expected_value, actual_value);
+}
 
 int main(void)
 {
@@ -118,5 +165,7 @@ int main(void)
 	RUN_TEST(TEST_ParseExpression_UnaryMinusOnParenBinop_NegationFlagSet);
 	RUN_TEST(TEST_ParseExpression_UnaryMinusOnExponent_ExponentNegated);
 	RUN_TEST(TEST_EvalExpr_ComplicatedExpression_Expected);
+	RUN_TEST(TEST_EvalExpr_VariableAssignments_Expected);
+	RUN_TEST(TEST_ExpressionSequence_Works);
 	return UNITY_END();
 }

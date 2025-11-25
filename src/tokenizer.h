@@ -12,6 +12,7 @@ typedef enum TokenType_t
 	TOK_ASTERISK = '*',
 	TOK_SLASH = '/',
 	TOK_HAT = '^',
+	TOK_SEMICOLON = ';',
 	TOK_NUMBER = 256,
 	TOK_IDENT,
 } TokenType;
@@ -36,7 +37,7 @@ typedef struct Token_t
 typedef struct TokenStream_t
 {
 	const char *at;
-	const char *const end;
+	const char *end;
 	const char *lineStart;
 	int lineCount;
 } TokenStream;
