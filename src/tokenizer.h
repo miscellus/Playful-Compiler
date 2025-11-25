@@ -37,7 +37,7 @@ typedef struct Token_t
 typedef struct TokenStream_t
 {
 	const char *at;
-	const char *const end;
+	const char *end;
 	const char *lineStart;
 	int lineCount;
 } TokenStream;

@@ -13,9 +13,7 @@ void tearDown(){}
 static Expr *ArrangeExpr(const char *cstr)
 {
 	TokenStream ts = TokenStreamFromCStr(cstr);
-	Expr *result = ParseExpression(&ts, 0, TOK_INPUT_END);
-	PrintExprInfix(result);
-	printf("\n");
+	Expr *result = ParseExprSeq(&ts);
 	return result;
 }
 

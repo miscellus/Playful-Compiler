@@ -178,7 +178,7 @@ int main(int argc, char const *argv[])
 
 	TokenStream ts = TokenStreamFromCStr(input);
 
-	Expr *parsedExpression = ParseExpression(&ts, 0, TOK_INPUT_END);
+	Expr *parsedExpression = ParseExprSeq(&ts);
 
 	if (parsedExpression && parsedExpression->type == EXPR_PARSE_ERROR)
 	{
@@ -190,7 +190,7 @@ int main(int argc, char const *argv[])
 	if (options.flags & CL_OPTION_PRINT_INFIX)
 	{
 		printf("Interpretation (Infix): ");
-		PrintExprInfix(parsedExpression);
+		PrintExpr(parsedExpression);
 		printf("\n");
 	}
 
@@ -201,12 +201,12 @@ int main(int argc, char const *argv[])
 		printf("\n");
 	}
 
-	if (options.flags & CL_OPTION_PRINT_RPN)
-	{
-		printf("Interpretation (RPN): ");
-		PrintExprRpn(parsedExpression);
-		printf("\n");
-	}
+	// if (options.flags & CL_OPTION_PRINT_RPN)
+	// {
+	// 	printf("Interpretation (RPN): ");
+	// 	PrintExprRpn(parsedExpression);
+	// 	printf("\n");
+	// }
 
 	if (parsedExpression)
 	{

@@ -37,6 +37,7 @@ typedef enum
 	EXPR_BINOP,
 	EXPR_PARSE_ERROR,
 	EXPR_VARIABLE,
+	EXPR_SEQUENCE,
 } ExprType;
 
 typedef enum
@@ -44,11 +45,16 @@ typedef enum
 	EXPR_FLAG_NEGATED = (1 << 0),
 } ExprFlags;
 
+typedef struct ExprSeq_t
+{
+	struct Expr_t *expr;
+	struct ExprSeq_t *next;
+} ExprSeq;
+
 typedef struct Expr_t
 {
 	ExprType type;
 	ExprFlags flags;
-	struct Expr_t *next;
 
 	union
 	{
@@ -56,15 +62,17 @@ typedef struct Expr_t
 		BinNode binop;
 		ParseError error;
 		VariableExpr variable;
+		ExprSeq seq;
 	} as;
 } Expr;
 
-Expr *ParseExpression(TokenStream *ts, int minPrec, TokenType stopToken);
+
+Expr *ParseExprSeq(TokenStream *ts);
+Expr *ParseExpr(TokenStream *ts, int minPrec, TokenType stopToken);
 
 double EvalExpr(Expr *expr);
 
-void PrintExprInfix(Expr *expr);
-void PrintExprRpn(Expr *expr);
+void PrintExpr(Expr *expr);
 void PrintExprS(Expr *expr);
 
 #endif
