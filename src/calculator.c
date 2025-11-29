@@ -210,7 +210,8 @@ int main(int argc, char const *argv[])
 
 	if (parsedExpression)
 	{
-		double result = EvalExpr(parsedExpression);
+		VarTable vars = {0};
+		double result = EvalExpr(&vars, parsedExpression);
 		printf("%g\n", result);
 	}
 	else

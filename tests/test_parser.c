@@ -6,9 +6,18 @@
 #include "unity_internals.h"
 #include "../src/tokenizer.h"
 #include "../src/parser.h"
+#include "../src/var_table.h"
 
-void setUp() {}
-void tearDown(){}
+static VarTable variables = {0};
+
+void setUp()
+{
+	vartable_free(&variables);
+}
+
+void tearDown()
+{
+}
 
 static Expr *ArrangeExpr(const char *cstr)
 {
@@ -102,7 +111,7 @@ void TEST_EvalExpr_ComplicatedExpression_Expected(void)
 	double expected_value = 18035.150250378;
 
 	// Act
-	double actual_value = EvalExpr(expr);
+	double actual_value = EvalExpr(&variables, expr);
 
 	// Assert
 	TEST_ASSERT_EQUAL_DOUBLE(expected_value, actual_value);
@@ -123,7 +132,7 @@ void TEST_EvalExpr_VariableAssignments_Expected(void)
 	double expected_value = 132.0;
 
 	// Act
-	double actual_value = EvalExpr(expr);
+	double actual_value = EvalExpr(&variables, expr);
 
 	// Assert
 	TEST_ASSERT_EQUAL_DOUBLE(expected_value, actual_value);
@@ -136,20 +145,30 @@ void TEST_ExpressionSequence_Works(void)
 	double expected_value = 3.0;
 
 	// Act
-	double actual_value = EvalExpr(expr);
+	double actual_value = EvalExpr(&variables, expr);
 
 	// Assert
 	TEST_ASSERT_EQUAL_DOUBLE(expected_value, actual_value);
 }
 
-void TEST_nocheckin(void)
+void TEST_NestedExpressionSequence_Works(void)
 {
 	// Arrange
-	Expr* expr = ArrangeExpr("a = 1; b = a * 3; a = b - a; b");
-	double expected_value = 3.0;
+	Expr* expr = ArrangeExpr(
+		"result = (\n"
+			"var_1 = (\n"
+				"var_2 = 5.5;\n"
+				"-var_2 + 3 * var_2\n"
+			");\n"
+			"-2 + 4 * var_2 + 2 * var_1\n"
+		");\n"
+		"result\n"
+	);
+
+	double expected_value = 42.0;
 
 	// Act
-	double actual_value = EvalExpr(expr);
+	double actual_value = EvalExpr(&variables, expr);
 
 	// Assert
 	TEST_ASSERT_EQUAL_DOUBLE(expected_value, actual_value);
@@ -167,5 +186,6 @@ int main(void)
 	RUN_TEST(TEST_EvalExpr_ComplicatedExpression_Expected);
 	RUN_TEST(TEST_EvalExpr_VariableAssignments_Expected);
 	RUN_TEST(TEST_ExpressionSequence_Works);
+	RUN_TEST(TEST_NestedExpressionSequence_Works);
 	return UNITY_END();
 }

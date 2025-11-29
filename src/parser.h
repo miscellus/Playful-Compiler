@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "tokenizer.h"
+#include "var_table.h"
 
 enum
 {
@@ -70,7 +71,7 @@ typedef struct Expr_t
 Expr *ParseExprSeq(TokenStream *ts);
 Expr *ParseExpr(TokenStream *ts, int minPrec, TokenType stopToken);
 
-double EvalExpr(Expr *expr);
+double EvalExpr(VarTable *vars, Expr *expr);
 
 void PrintExpr(Expr *expr);
 void PrintExprS(Expr *expr);

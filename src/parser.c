@@ -218,36 +218,37 @@ restart:
 
 static double variables[256];
 
-double EvalExpr(Expr *expr)
+double EvalExpr(VarTable *vars, Expr *expr)
 {
 	double result = 0;
 
 	switch (expr->type)
 	{
 		case EXPR_NUMBER:
-		{
 			result = expr->as.number;
-		} break;
+			break;
 
-		case  EXPR_VARIABLE:
+		case EXPR_VARIABLE:
 		{
-			result = variables[expr->as.variable.ident.chars[0]];
+			VarEntry *e = vartable_find_ident(vars, expr->as.variable.ident);
+			result = e ? e->val : 0.0;
 		} break;
 
 		case EXPR_BINOP:
 		{
 			BinNode bn = expr->as.binop;
-
-			double rresult = EvalExpr(bn.rhs);
+			double rresult = EvalExpr(vars, bn.rhs);
 
 			if (bn.op == '=')
 			{
-				assert(bn.lhs->type == EXPR_VARIABLE || !"Left-hand of assignment must be variable");
-				result = variables[bn.lhs->as.variable.ident.chars[0]] = rresult;
+				assert(bn.lhs->type == EXPR_VARIABLE && "Left-hand of assignment must be variable");
+				VarEntry *dest = vartable_get_or_create_ident(vars, bn.lhs->as.variable.ident);
+				dest->val = rresult;
+				result = rresult;
 				break;
 			}
 
-			double lresult = EvalExpr(bn.lhs);
+			double lresult = EvalExpr(vars, bn.lhs);
 
 			switch (bn.op)
 			{
@@ -266,27 +267,25 @@ double EvalExpr(Expr *expr)
 			ExprSeq *seq = &expr->as.seq;
 			while (seq)
 			{
-				result = EvalExpr(seq->expr);
+				result = EvalExpr(vars, seq->expr);
 				seq = seq->next;
 			}
 		} break;
 
 		case EXPR_PARSE_ERROR:
-		{
 			assert(!"TODO: eval parse error");
-		} break;
+			break;
 
 		default:
 			assert(0 && "Invalid code path!");
 	}
 
 	if (expr->flags & EXPR_FLAG_NEGATED)
-	{
 		result = -result;
-	}
 
 	return result;
 }
+
 
 void PrintExpr(Expr *expr)
 {
