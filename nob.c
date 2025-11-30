@@ -47,6 +47,36 @@ void cmd_cc_output(const char *output)
 #endif
 }
 
+bool build_calculator(void)
+{
+    cmd_cc_common();
+    cmd_append(cmd, "-I..\\src");
+    cmd_append(cmd, SRC "calculator.c");
+    cmd_append(cmd, SRC "tokenizer.c");
+    cmd_append(cmd, SRC "parser.c");
+    cmd_append(cmd, SRC "var_table.c");
+    cmd_cc_output(BUILD "calculator.exe");
+    cmd_append(cmd, "-lm");
+
+    return cmd_run(cmd);
+}
+
+bool build_repl(void)
+{
+    cmd_cc_common();
+    cmd_append(cmd, "-Isrc");
+    cmd_append(cmd, SRC "repl/repl.c");
+    cmd_append(cmd, SRC "repl/external/crossline.c");
+    cmd_append(cmd, SRC "tokenizer.c");
+    cmd_append(cmd, SRC "parser.c");
+    cmd_append(cmd, SRC "var_table.c");
+    cmd_cc_output(BUILD "repl.exe");
+    cmd_append(cmd, "User32.Lib");
+    cmd_append(cmd, "-lm");
+
+    return cmd_run(cmd);
+}
+
 int main(int argc, char **argv)
 {
     NOB_GO_REBUILD_URSELF(argc, argv);
@@ -77,16 +107,8 @@ int main(int argc, char **argv)
     {
         if (!mkdir_if_not_exists(BUILD)) return 1;
 
-        cmd_cc_common();
-        cmd_append(cmd, "-I..\\src");
-        cmd_append(cmd, SRC "calculator.c");
-        cmd_append(cmd, SRC "tokenizer.c");
-        cmd_append(cmd, SRC "parser.c");
-        cmd_append(cmd, SRC "var_table.c");
-        cmd_cc_output(BUILD "calculator.exe");
-        cmd_append(cmd, "-lm");
-
-        if (!cmd_run(cmd)) return 1;
+        if (!build_calculator()) return 1;
+        if (!build_repl()) return 1;
 
         if (run)
         {
