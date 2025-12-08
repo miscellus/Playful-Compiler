@@ -55,6 +55,7 @@ bool build_calculator(void)
     cmd_append(cmd, SRC "tokenizer.c");
     cmd_append(cmd, SRC "parser.c");
     cmd_append(cmd, SRC "var_table.c");
+    cmd_append(cmd, SRC "msc_arena.c");
     cmd_cc_output(BUILD "calculator.exe");
     cmd_append(cmd, "-lm");
 
@@ -70,6 +71,7 @@ bool build_repl(void)
     cmd_append(cmd, SRC "tokenizer.c");
     cmd_append(cmd, SRC "parser.c");
     cmd_append(cmd, SRC "var_table.c");
+    cmd_append(cmd, SRC "msc_arena.c");
     cmd_cc_output(BUILD "repl.exe");
     cmd_append(cmd, "User32.Lib");
     cmd_append(cmd, "-lm");
@@ -135,6 +137,8 @@ int main(int argc, char **argv)
             SRC "var_table.h",
             SRC "tokenizer.c",
             SRC "tokenizer.h",
+            SRC "msc_arena.c",
+            SRC "msc_arena.h",
             TESTS "test_parser.c",
             TESTS "test_tokenizer.c",
         };
@@ -152,6 +156,7 @@ int main(int argc, char **argv)
             cmd_append(cmd, SRC "tokenizer.c");
             cmd_append(cmd, SRC "parser.c");
             cmd_append(cmd, SRC "var_table.c");
+            cmd_append(cmd, SRC "msc_arena.c");
             cmd_append(cmd, TESTS "test_parser.c");
             cmd_cc_output(test_parser_exe);
             cmd_append(cmd, "-lm");

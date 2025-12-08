@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "tokenizer.h"
 #include "var_table.h"
+#include "msc_arena.h"
 
 enum
 {
@@ -67,9 +68,14 @@ typedef struct Expr_t
 	} as;
 } Expr;
 
+typedef struct Parser
+{
+	msc_arena arena;
+	TokenStream *ts;
+} Parser;
 
-Expr *ParseExprSeq(TokenStream *ts);
-Expr *ParseExpr(TokenStream *ts, int minPrec, TokenType stopToken);
+Expr *ParseExprSeq(Parser *p);
+Expr *ParseExpr(Parser *p, int minPrec, TokenType stopToken);
 
 double EvalExpr(VarTable *vars, Expr *expr);
 

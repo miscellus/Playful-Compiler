@@ -21,8 +21,12 @@ void tearDown()
 
 static Expr *ArrangeExpr(const char *cstr)
 {
+	Parser p;
+	memset(&p, 0, sizeof(p));
+	p.arena = msc_arena_create(64ull<<20ull);
 	TokenStream ts = TokenStreamFromCStr(cstr);
-	Expr *result = ParseExprSeq(&ts);
+	p.ts = &ts;
+	Expr *result = ParseExprSeq(&p);
 	return result;
 }
 

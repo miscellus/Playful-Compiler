@@ -24,19 +24,25 @@ gcc -Wall crossline.c example.c -o example
 #include "parser.h"
 #include "tokenizer.h"
 #include "var_table.h"
+#include "msc_arena.h"
 
 int main ()
 {
     VarTable variables = {0};
     char buf[1024];
+    Parser parser = {0};
+    parser.arena = msc_arena_create(64ull<<20ull);
+    parser.arena.flags = MSC_ARENA_OPT_ZERO;
 
     // crossline_completion_register(completion_hook);
     crossline_history_load("playful_history.txt");
 
     while (crossline_readline(">>> ", buf, sizeof(buf)))
     {
+        msc_arena_reset(&parser.arena);
         TokenStream ts = TokenStreamFromCStr(buf);
-        Expr *expr = ParseExprSeq(&ts);
+        parser.ts = &ts;
+        Expr *expr = ParseExprSeq(&parser);
         if (expr == NULL) continue;
 
         // PrintExpr(expr);

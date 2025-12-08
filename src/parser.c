@@ -31,7 +31,7 @@ static void OperatorPrecedence(int op, int *lPrec, int *rPrec)
 	*rPrec = 2*p + (1 & (1 - r));
 }
 
-static Expr *ErrorExpr(int lineNumber, int characterColumn, const char *restrict messageFormat, ...)
+static Expr *ErrorExpr(Parser *p, int lineNumber, int characterColumn, const char *restrict messageFormat, ...)
 {
 	char messageBuffer[512];
 
@@ -42,10 +42,10 @@ static Expr *ErrorExpr(int lineNumber, int characterColumn, const char *restrict
 
 	assert(messageLen >= 0 && messageLen < (int)sizeof(messageBuffer));
 
-	char *message = calloc(messageLen + 1, sizeof(*message));
+	char *message = msc_arena_push_array(&p->arena, char, messageLen + 1);
 	strncpy(message, messageBuffer, messageLen);
 
-	Expr *result = calloc(1, sizeof(*result));
+	Expr *result = msc_arena_push(&p->arena, Expr);
 	result->type = EXPR_PARSE_ERROR;
 	result->as.error = (ParseError){
 		.message = message,
@@ -55,8 +55,9 @@ static Expr *ErrorExpr(int lineNumber, int characterColumn, const char *restrict
 	return result;
 }
 
-Expr *ParseExprSeq(TokenStream *ts)
+Expr *ParseExprSeq(Parser *p)
 {
+	TokenStream *ts = p->ts;
 	int prec;
 	int ignore;
 	OperatorPrecedence(';', &prec, &ignore);
@@ -65,7 +66,7 @@ Expr *ParseExprSeq(TokenStream *ts)
 	ExprSeq *seq = &head;
 
 	for (;;) {
-		seq->expr = ParseExpr(ts, prec, TOK_INPUT_END);
+		seq->expr = ParseExpr(p, prec, TOK_INPUT_END);
 		if (seq->expr == NULL) break;
 
 		TokenStream rewindPoint = *ts;
@@ -76,14 +77,14 @@ Expr *ParseExprSeq(TokenStream *ts)
 			break;
 		}
 
-		seq = seq->next = calloc(1, sizeof(*seq));
+		seq = seq->next = msc_arena_push(&p->arena, ExprSeq);
 	}
 
 	Expr *expr = head.expr;
 
 	if (head.next)
 	{
-		expr = calloc(1, sizeof(*expr));
+		expr = msc_arena_push(&p->arena, Expr);
 		expr->type = EXPR_SEQUENCE;
 		expr->as.seq = head;
 	}
@@ -91,8 +92,9 @@ Expr *ParseExprSeq(TokenStream *ts)
 	return expr;
 }
 
-Expr *ParseExpr(TokenStream *ts, int minimumPrecedence, TokenType stopToken)
+Expr *ParseExpr(Parser *p, int minimumPrecedence, TokenType stopToken)
 {
+	TokenStream *ts = p->ts;
 	bool negate = false;
 	Token token = {0};
 
@@ -112,25 +114,26 @@ restart:
 		goto restart;
 
 	case TOK_IDENT:
-		lhs = calloc(1, sizeof(*lhs));
+		lhs = msc_arena_push(&p->arena, Expr);
 		lhs->type = EXPR_VARIABLE;
 		lhs->as.variable = (VariableExpr){.ident = token.as.ident};
 	break;
 
 	case TOK_NUMBER:
-		lhs = calloc(1, sizeof(*lhs));
+		lhs = msc_arena_push(&p->arena, Expr);
 		lhs->type = EXPR_NUMBER;
 		lhs->as.number = token.as.number;
 	break;
 
 	case '(':
 	{
-		lhs = ParseExprSeq(ts);
+		lhs = ParseExprSeq(p);
 
 		Token endParen = NextToken(ts);
 		if (endParen.type != ')')
 		{
 			return ErrorExpr(
+				p,
 				endParen.line, endParen.column,
 				"Expected token ')', found: %d '%c'",
 				endParen.type, endParen.type);
@@ -162,7 +165,7 @@ restart:
 		{
 		case '=': {
 			if (lhs->type != EXPR_VARIABLE) {
-				return ErrorExpr(tokOp.line, tokOp.column, "Left-hand side of operator '=' must be a variable");
+				return ErrorExpr(p, tokOp.line, tokOp.column, "Left-hand side of operator '=' must be a variable");
 			}
 		} break;
 
@@ -187,11 +190,12 @@ restart:
 
 		ts->at = tsTemp.at;
 
-		Expr *rhs = ParseExpr(ts, rPrec, stopToken);
+		Expr *rhs = ParseExpr(p, rPrec, stopToken);
 
 		if (rhs == NULL)
 		{
 			return ErrorExpr(
+				p,
 				ts->lineCount, GetColumn(ts),
 				"Operator '%c' missing right hand operand",
 				tokOp.type);
@@ -201,7 +205,7 @@ restart:
 			return rhs;
 		}
 
-		Expr *newLhs = calloc(1, sizeof(*newLhs));
+		Expr *newLhs = msc_arena_push(&p->arena, Expr);
 		newLhs->type = EXPR_BINOP;
 		newLhs->as.binop = (BinNode)
 		{

@@ -176,9 +176,15 @@ int main(int argc, char const *argv[])
 		}
 	}
 
-	TokenStream ts = TokenStreamFromCStr(input);
 
-	Expr *parsedExpression = ParseExprSeq(&ts);
+	Parser parser;
+	memset(&parser, 0, sizeof(parser));
+
+	parser.arena = msc_arena_create(64ull<<20ull);
+	TokenStream ts = TokenStreamFromCStr(input);
+	parser.ts = &ts;
+
+	Expr *parsedExpression = ParseExprSeq(&parser);
 
 	if (parsedExpression && parsedExpression->type == EXPR_PARSE_ERROR)
 	{
