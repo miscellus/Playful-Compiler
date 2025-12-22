@@ -22,7 +22,7 @@ gcc -Wall crossline.c example.c -o example
 #include "external/crossline.h"
 
 #include "parser.h"
-#include "tokenizer.h"
+#include "lexer.h"
 #include "var_table.h"
 #include "msc_arena.h"
 
@@ -40,8 +40,8 @@ int main ()
     while (crossline_readline(">>> ", buf, sizeof(buf)))
     {
         msc_arena_reset(&parser.arena);
-        TokenStream ts = TokenStreamFromCStr(buf);
-        parser.ts = &ts;
+        Lexer lex = LexerFromCStr(buf);
+        parser.lex = &lex;
         Expr *expr = ParseExprSeq(&parser);
         if (expr == NULL) continue;
 

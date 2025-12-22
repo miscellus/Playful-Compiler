@@ -5,7 +5,8 @@
 
 typedef enum TokenType_t
 {
-	TOK_INPUT_END = 0,
+	TOK_NO_TOKEN = 0,
+	TOK_INPUT_END,
 	TOK_EQUALS = '=',
 	TOK_PLUS = '+',
 	TOK_MINUS = '-',
@@ -13,6 +14,8 @@ typedef enum TokenType_t
 	TOK_SLASH = '/',
 	TOK_HAT = '^',
 	TOK_SEMICOLON = ';',
+	TOK_OPAREN = '(',
+	TOK_CPAREN = ')',
 	TOK_NUMBER = 256,
 	TOK_IDENT,
 } TokenType;
@@ -25,7 +28,7 @@ typedef struct Ident_t
 
 typedef struct Token_t
 {
-	int type;
+	TokenType type;
 	int line;
 	int column;
 	union {
@@ -34,18 +37,19 @@ typedef struct Token_t
 	} as;
 } Token;
 
-typedef struct TokenStream_t
+typedef struct Lexer_t
 {
 	const char *at;
 	const char *end;
 	const char *lineStart;
 	int lineCount;
-} TokenStream;
+	Token token;
+} Lexer;
 
-TokenStream TokenStreamFromCStr(const char *str);
+Lexer LexerFromCStr(const char *str);
 
-Token NextToken(TokenStream *ts);
+Token LexerNextToken(Lexer *lex);
 
-int GetColumn(TokenStream *ts);
+int GetColumn(Lexer *lex);
 
 #endif

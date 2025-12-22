@@ -4,7 +4,7 @@
 
 #include "unity.h"
 #include "unity_internals.h"
-#include "../src/tokenizer.h"
+#include "../src/lexer.h"
 #include "../src/parser.h"
 #include "../src/var_table.h"
 
@@ -24,8 +24,8 @@ static Expr *ArrangeExpr(const char *cstr)
 	Parser p;
 	memset(&p, 0, sizeof(p));
 	p.arena = msc_arena_create(64ull<<20ull);
-	TokenStream ts = TokenStreamFromCStr(cstr);
-	p.ts = &ts;
+	Lexer lex = LexerFromCStr(cstr);
+	p.lex = &lex;
 	Expr *result = ParseExprSeq(&p);
 	return result;
 }

@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <math.h>
 
-#include "tokenizer.h"
+#include "lexer.h"
 
 #define VARKEY_MAX_LEN 255
 #define INITIAL_CAPACITY 64 // Must be power of two

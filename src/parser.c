@@ -7,7 +7,7 @@
 #include <string.h>
 
 #include "parser.h"
-#include "tokenizer.h"
+#include "lexer.h"
 
 static void OperatorPrecedence(int op, int *lPrec, int *rPrec)
 {
@@ -57,7 +57,7 @@ static Expr *ErrorExpr(Parser *p, int lineNumber, int characterColumn, const cha
 
 Expr *ParseExprSeq(Parser *p)
 {
-	TokenStream *ts = p->ts;
+	Lexer *lex = p->lex;
 	int prec;
 	int ignore;
 	OperatorPrecedence(';', &prec, &ignore);
@@ -69,11 +69,11 @@ Expr *ParseExprSeq(Parser *p)
 		seq->expr = ParseExpr(p, prec, TOK_INPUT_END);
 		if (seq->expr == NULL) break;
 
-		TokenStream rewindPoint = *ts;
-		Token tok = NextToken(ts);
-		if (tok.type != ';')
+		Lexer rewindPoint = *lex;
+		Token tok = LexerNextToken(lex);
+		if (lex->token.type != ';')
 		{
-			*ts = rewindPoint;
+			*lex = rewindPoint;
 			break;
 		}
 
@@ -94,7 +94,7 @@ Expr *ParseExprSeq(Parser *p)
 
 Expr *ParseExpr(Parser *p, int minimumPrecedence, TokenType stopToken)
 {
-	TokenStream *ts = p->ts;
+	Lexer *lex = p->lex;
 	bool negate = false;
 	Token token = {0};
 
@@ -102,7 +102,7 @@ Expr *ParseExpr(Parser *p, int minimumPrecedence, TokenType stopToken)
 	// Parse LValue
 	//
 restart:
-	token = NextToken(ts);
+	token = LexerNextToken(lex);
 	Expr *lhs = NULL;
 
 	switch (token.type)
@@ -129,7 +129,7 @@ restart:
 	{
 		lhs = ParseExprSeq(p);
 
-		Token endParen = NextToken(ts);
+		Token endParen = LexerNextToken(lex);
 		if (endParen.type != ')')
 		{
 			return ErrorExpr(
@@ -158,8 +158,8 @@ restart:
 	//
 	for (;;)
 	{
-		TokenStream tsTemp = *ts;
-		Token tokOp = NextToken(&tsTemp);
+		Lexer lexTmp = *lex;
+		Token tokOp = LexerNextToken(&lexTmp);
 
 		switch (tokOp.type)
 		{
@@ -188,7 +188,7 @@ restart:
 			break;
 		}
 
-		ts->at = tsTemp.at;
+		lex->at = lexTmp.at;
 
 		Expr *rhs = ParseExpr(p, rPrec, stopToken);
 
@@ -196,7 +196,7 @@ restart:
 		{
 			return ErrorExpr(
 				p,
-				ts->lineCount, GetColumn(ts),
+				lex->lineCount, GetColumn(lex),
 				"Operator '%c' missing right hand operand",
 				tokOp.type);
 		}

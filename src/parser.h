@@ -2,7 +2,7 @@
 #define PARSER_H
 
 #include <stdint.h>
-#include "tokenizer.h"
+#include "lexer.h"
 #include "var_table.h"
 #include "msc_arena.h"
 
@@ -71,7 +71,7 @@ typedef struct Expr_t
 typedef struct Parser
 {
 	msc_arena arena;
-	TokenStream *ts;
+	Lexer *lex;
 } Parser;
 
 Expr *ParseExprSeq(Parser *p);

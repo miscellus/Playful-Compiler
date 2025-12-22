@@ -1,7 +1,7 @@
 #ifndef VAR_TABLE_H
 #define VAR_TABLE_H
 
-#include "tokenizer.h"
+#include "lexer.h"
 
 #define VARKEY_MAX_LEN 256
 #define INITIAL_CAPACITY 64 // Must be power of two

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "tokenizer.h"
+#include "lexer.h"
 #include "parser.h"
 
 #define CL_OPTION_LIST(X) \
@@ -181,8 +181,8 @@ int main(int argc, char const *argv[])
 	memset(&parser, 0, sizeof(parser));
 
 	parser.arena = msc_arena_create(64ull<<20ull);
-	TokenStream ts = TokenStreamFromCStr(input);
-	parser.ts = &ts;
+	Lexer lex = LexerFromCStr(input);
+	parser.lex = &lex;
 
 	Expr *parsedExpression = ParseExprSeq(&parser);
 

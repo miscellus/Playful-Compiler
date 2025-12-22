@@ -52,7 +52,7 @@ bool build_calculator(void)
     cmd_cc_common();
     cmd_append(cmd, "-I..\\src");
     cmd_append(cmd, SRC "calculator.c");
-    cmd_append(cmd, SRC "tokenizer.c");
+    cmd_append(cmd, SRC "lexer.c");
     cmd_append(cmd, SRC "parser.c");
     cmd_append(cmd, SRC "var_table.c");
     cmd_append(cmd, SRC "msc_arena.c");
@@ -68,7 +68,7 @@ bool build_repl(void)
     cmd_append(cmd, "-Isrc");
     cmd_append(cmd, SRC "repl/repl.c");
     cmd_append(cmd, SRC "repl/external/crossline.c");
-    cmd_append(cmd, SRC "tokenizer.c");
+    cmd_append(cmd, SRC "lexer.c");
     cmd_append(cmd, SRC "parser.c");
     cmd_append(cmd, SRC "var_table.c");
     cmd_append(cmd, SRC "msc_arena.c");
@@ -135,25 +135,25 @@ int main(int argc, char **argv)
             SRC "parser.h",
             SRC "var_table.c",
             SRC "var_table.h",
-            SRC "tokenizer.c",
-            SRC "tokenizer.h",
+            SRC "lexer.c",
+            SRC "lexer.h",
             SRC "msc_arena.c",
             SRC "msc_arena.h",
             TESTS "test_parser.c",
-            TESTS "test_tokenizer.c",
+            TESTS "test_lexer.c",
         };
 
         if (needs_rebuild(test_tokenizer_exe, test_input_paths, ARRAY_LEN(test_input_paths)))
         {
             nob_log(INFO, "Rebuilding tests");
             append_test();
-            cmd_append(cmd, SRC "tokenizer.c");
-            cmd_append(cmd, TESTS "test_tokenizer.c");
+            cmd_append(cmd, SRC "lexer.c");
+            cmd_append(cmd, TESTS "test_lexer.c");
             cmd_cc_output(test_tokenizer_exe);
             if (!cmd_run(cmd)) return 1;
 
             append_test();
-            cmd_append(cmd, SRC "tokenizer.c");
+            cmd_append(cmd, SRC "lexer.c");
             cmd_append(cmd, SRC "parser.c");
             cmd_append(cmd, SRC "var_table.c");
             cmd_append(cmd, SRC "msc_arena.c");
