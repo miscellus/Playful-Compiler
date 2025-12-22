@@ -37,12 +37,19 @@ typedef struct Token_t
 	} as;
 } Token;
 
+typedef struct LexPos_t
+{
+	int at;
+	int lineStart;
+	int lineCount;
+} LexPos;
+
 typedef struct Lexer_t
 {
-	const char *at;
-	const char *end;
-	const char *lineStart;
-	int lineCount;
+	const char *base;
+	int length;
+	LexPos pos;
+
 	Token token;
 } Lexer;
 

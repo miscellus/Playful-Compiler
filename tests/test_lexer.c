@@ -11,7 +11,7 @@ void TEST_TokenStreamFromCStr_EmptyInput_EndAtStart(void)
 	Lexer lex = LexerFromCStr("");
 
 	// Assert
-	TEST_ASSERT_EQUAL_PTR(lex.at, lex.end);
+	TEST_ASSERT_EQUAL_INT32(lex.pos.at, lex.length);
 }
 
 void TEST_TokenStreamFromCStr_InputOfLength13_EndAtStartPlus13(void)
@@ -20,7 +20,7 @@ void TEST_TokenStreamFromCStr_InputOfLength13_EndAtStartPlus13(void)
 	Lexer lex = LexerFromCStr("Hello, World!");
 
 	// Assert
-	TEST_ASSERT_EQUAL_PTR(lex.at + 13, lex.end);
+	TEST_ASSERT_EQUAL_INT32(lex.length, 13);
 }
 
 void TEST_LexerNextToken_EmptyInput_EmptyOutput(void)

@@ -70,8 +70,7 @@ Expr *ParseExprSeq(Parser *p)
 		if (seq->expr == NULL) break;
 
 		Lexer rewindPoint = *lex;
-		Token tok = LexerNextToken(lex);
-		if (lex->token.type != ';')
+		if (LexerNextToken(lex).type != ';')
 		{
 			*lex = rewindPoint;
 			break;
@@ -158,26 +157,28 @@ restart:
 	//
 	for (;;)
 	{
-		Lexer lexTmp = *lex;
-		Token tokOp = LexerNextToken(&lexTmp);
+		LexPos savedPos = lex->pos;
+		Token tokOp = LexerNextToken(lex);
 
 		switch (tokOp.type)
 		{
-		case '=': {
-			if (lhs->type != EXPR_VARIABLE) {
-				return ErrorExpr(p, tokOp.line, tokOp.column, "Left-hand side of operator '=' must be a variable");
-			}
-		} break;
+			case '=': {
+				if (lhs->type != EXPR_VARIABLE) {
+					lex->pos = savedPos;
+					return ErrorExpr(p, tokOp.line, tokOp.column, "Left-hand side of operator '=' must be a variable");
+				}
+			} break;
 
-		case '+':
-		case '-':
-		case '*':
-		case '/':
-		case '^':
-			break;
+			case '+':
+			case '-':
+			case '*':
+			case '/':
+			case '^':
+				break;
 
-		default:
-			return lhs;
+			default:
+				lex->pos = savedPos;
+				return lhs;
 		}
 
 		int lPrec, rPrec;
@@ -185,10 +186,9 @@ restart:
 
 		if (lPrec < minimumPrecedence)
 		{
+			lex->pos = savedPos;
 			break;
 		}
-
-		lex->at = lexTmp.at;
 
 		Expr *rhs = ParseExpr(p, rPrec, stopToken);
 
@@ -196,7 +196,7 @@ restart:
 		{
 			return ErrorExpr(
 				p,
-				lex->lineCount, GetColumn(lex),
+				lex->pos.lineCount, GetColumn(lex),
 				"Operator '%c' missing right hand operand",
 				tokOp.type);
 		}

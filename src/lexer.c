@@ -9,14 +9,14 @@
 
 static int RemainingChars(Lexer *lex)
 {
-	return (int)(lex->end - lex->at);
+	return (int)(lex->length - lex->pos.at);
 }
 
 static char PeekChar(Lexer *lex)
 {
 	if (RemainingChars(lex) <= 0)
 		return 0;
-	return *lex->at;
+	return lex->base[lex->pos.at];
 }
 
 static char Advance(Lexer *lex)
@@ -24,12 +24,12 @@ static char Advance(Lexer *lex)
 	if (RemainingChars(lex) <= 0)
 		return 0;
 
-	char c = *lex->at++;
+	char c = lex->base[lex->pos.at++];
 
 	if (c == '\n')
 	{
-		lex->lineStart = lex->at;
-		++lex->lineCount;
+		lex->pos.lineStart = lex->pos.at;
+		++lex->pos.lineCount;
 	}
 
 	return c;
@@ -37,26 +37,29 @@ static char Advance(Lexer *lex)
 
 static void EatSpace(Lexer *lex)
 {
-	while (lex->at < lex->end && isspace(*lex->at)) Advance(lex);
+	while (isspace(PeekChar(lex))) Advance(lex);
 }
 
 int GetColumn(Lexer *lex)
 {
-	int result = (int)(lex->at - lex->lineStart);
+	int result = (int)(lex->pos.at - lex->pos.lineStart);
 	assert(result >= 0);
 	return result;
 }
 
 Lexer LexerFromCStr(const char *str)
 {
-	return (Lexer){str, str + strlen(str), str, 0};
+	Lexer l = {0};
+	l.base = str;
+	l.length = (int)strlen(str);
+	return l;
 }
 
 static void
 NumberToken(Lexer *lex, Token *outToken)
 {
 	char buf[128] = {0};
-	const char *tokStart = lex->at;
+	int tokStart = lex->pos.at;
 
 	// TODO(jkk): only one radix point please.
 	char c;
@@ -64,8 +67,8 @@ NumberToken(Lexer *lex, Token *outToken)
 		Advance(lex);
 	}
 
-	unsigned long copyLength = (unsigned long)(lex->at - tokStart) & (sizeof(buf) - 1);
-	memcpy(buf, tokStart, copyLength);
+	unsigned long copyLength = (unsigned long)(lex->pos.at - tokStart) & (sizeof(buf) - 1);
+	memcpy(buf, lex->base + tokStart, copyLength);
 	buf[copyLength] = '\0';
 
 	outToken->type = TOK_NUMBER;
@@ -75,7 +78,7 @@ NumberToken(Lexer *lex, Token *outToken)
 static void
 IdentToken(Lexer *lex, Token *outToken)
 {
-	const char *tokStart = lex->at;
+	int tokStart = lex->pos.at;
 	char c = PeekChar(lex);
 
 	if (isalnum(c) || c == '_')
@@ -87,9 +90,9 @@ IdentToken(Lexer *lex, Token *outToken)
 	}
 
 	Ident ident = {0};
-	ident.len = (unsigned long)(lex->at - tokStart);
+	ident.len = lex->pos.at - tokStart;
 	ident.chars = calloc(ident.len + 1, sizeof(*ident.chars));
-	memcpy(ident.chars, tokStart, ident.len);
+	memcpy(ident.chars, lex->base + tokStart, ident.len);
 
 	outToken->type = TOK_IDENT;
 	outToken->as.ident = ident;
@@ -101,7 +104,7 @@ LexerNextToken(Lexer *lex)
 	EatSpace(lex);
 
 	Token token = {0};
-	token.line = lex->lineCount;
+	token.line = lex->pos.lineCount;
 	token.column = GetColumn(lex);
 
 	char c = PeekChar(lex);
